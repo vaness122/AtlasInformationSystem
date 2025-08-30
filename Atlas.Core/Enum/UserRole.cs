@@ -8,7 +8,7 @@ namespace Atlas.Core.Enum
 {
     public enum UserRole
     {
-        SuperAdmin, //Full Access
+           SuperAdmin, //Full Access
             MunicipalityAdmin, // Manages Municipality
             BarangayAdmin , //Manages Barangay
             Resident //Read-only Access

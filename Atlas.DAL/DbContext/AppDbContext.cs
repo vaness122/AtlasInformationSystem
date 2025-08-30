@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,6 +25,9 @@ namespace Atlas.DAL.DbContext
         {
             base.OnModelCreating(builder);
 
+        
+
+
             //Municipality-= Barangay
             builder.Entity<Barangay>()
                 .HasOne(b => b.Municipality)
@@ -38,10 +42,10 @@ namespace Atlas.DAL.DbContext
 
             //Resident - Household
 
-                builder.Entity<Resident>()
-                .HasOne( r => r.Household)
-                .WithMany( h => h.Residents)
-                .HasForeignKey(r => r.HousholdId);
+            builder.Entity<Resident>()
+            .HasOne(r => r.Household)
+            .WithMany(h => h.Residents)
+            .HasForeignKey(r => r.HousholdId);
 
             //AppUser - Municipality - Barangay
             builder.Entity<AppUser>()
@@ -54,7 +58,9 @@ namespace Atlas.DAL.DbContext
                 .WithMany(b => b.Admins)
                 .HasForeignKey(u => u.BarangayId);
 
+
+      
         }
     }
-    
+
 }

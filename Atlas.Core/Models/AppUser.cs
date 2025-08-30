@@ -11,7 +11,7 @@ namespace Atlas.Core.Models
 {
    public class AppUser : IdentityUser
     {
-     public string FirstName { get; set; }
+        public string FirstName { get; set; }
         public string LastName { get; set; }
         public UserRole Role { get; set; }
         public int? MunicipalityId { get; set; }
@@ -19,6 +19,6 @@ namespace Atlas.Core.Models
 
 
         public Municipality Municipality { get; set; } 
-            public Barangay Barangay { get; set; }
+        public Barangay Barangay { get; set; }
     }
 }

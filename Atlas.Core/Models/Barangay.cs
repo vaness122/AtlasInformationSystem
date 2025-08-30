@@ -9,8 +9,8 @@ namespace Atlas.Core.Models
     public class Barangay
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Code { get; set; }
+        public required string Name { get; set; }
+        public required string Code { get; set; }
         public int MunicipalityId { get; set; } //Foreign Key of Municipality class
 
         public Municipality Municipality { get; set; }
