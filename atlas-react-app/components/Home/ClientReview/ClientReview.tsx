@@ -3,7 +3,7 @@ import { ClientReviewCard } from './ClientReviewCard'
 
 const ClientReview = () => {
   return (
-    <div className=' pt-16 pb-16 bg-gray-100'>
+    <div id="reviews" className=' pt-16 pb-16 bg-gray-100'>
         {/*Heading*/}
         <h1 className='text-center text-2xl text-blue-950 font-bold'>What Our Happy Client Says</h1>
         {/*sub heading*/}

@@ -6,11 +6,11 @@ import { MdOutlineDesignServices } from 'react-icons/md'
 
 const Services = () => {
   return (
-    <div className="pt-16 pb-16">
+    <div id="services" className="pt-16 pb-16">
    <div className="w-[80%] mx-auto">
     <BoxText>Our Services</BoxText>
     {/*heading*/}
-    <h1 className="mt-4 text-2xl md:text-3xl font-bold text-gray-800">
+    <h1   className="mt-4 text-2xl md:text-3xl font-bold text-gray-800">
   Our Services Made for You
       </h1>
 

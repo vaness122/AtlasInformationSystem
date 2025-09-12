@@ -4,11 +4,11 @@ import React from 'react'
 
 const Team = () => {
   return (
-    <div className='pt-16 pb-16'>
+    <div id="team"  className='pt-16 pb-16'>
   <div className='w-[80%] mx-auto grid grid-cols-1 lg:grid-cols-5 gap-10 items-center'>
     {/* text content */}
-    <div className='lg:col-span-2'>
-    <BoxText>Our Team</BoxText>
+    <div  className='lg:col-span-2'>
+    <BoxText  >Our Team</BoxText>
     {/*Heading*/}
     <h1 className='mt-4 text-xl md:text-2xl font-bold text-gray-800'>
         Our Team of Exceptional Talent, Innovation, and Visions

@@ -6,6 +6,7 @@ import { MdAccessAlarm, MdOutlineTouchApp } from 'react-icons/md'
 
 const Feature = () => {
   return ( 
+    <section id="features" className="pt-16 pb-16 bg-gray-100">
     <div className='pt-16 pb-16 bg-gray-100'>
      <div>
          <h1 className='text-center text-2xl text-blue-950 font-bold'>
@@ -141,10 +142,12 @@ const Feature = () => {
            height={700}
          />
         </div>
+     
 
 
         </div>
     </div>
+    </section>
   )
 }
 

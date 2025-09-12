@@ -11,7 +11,7 @@ export const navlinks =[
 
      {
       id:2,
-      url:'#',
+      url:'#features',
       label:'Features',
     },
 
@@ -19,14 +19,14 @@ export const navlinks =[
 
      {
       id:3,
-      url:'#',
+      url:'#services',
       label:'Services',
     },
 
 
      {
       id:4,
-      url:'#',
+      url:'#reviews',
       label:'Reviews',
     },
 
@@ -34,22 +34,22 @@ export const navlinks =[
 
      {
       id:5,
-      url:'#',
+      url:'#team',
       label:'Team',
     },
 
 
      {
-      id:6,
-      url:'#',
-      label:'Pricing',
+        id: 6,
+    url: '#pricing',  // <- make sure this matches the id attribute exactly
+    label: 'Pricing',
     },
 
 
 
      {
       id:7,
-      url:'#',
-      label:'Contatct',
+      url:'contact',
+      label:'Contact',
     },
 ];

@@ -34,7 +34,7 @@ const Footer = () => {
         </div>
 
         {/* 4th part - Contact Us */}
-        <div className="space-y-5">
+        <div id="contact" className="space-y-5">
           <h1 className="text-lg font-bold">Contact Us</h1>
           <div className="mt-6">
             <p className="text-sm text-gray-600">Our Mobile Number</p>
