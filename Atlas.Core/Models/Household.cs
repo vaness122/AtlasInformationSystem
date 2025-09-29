@@ -12,5 +12,7 @@ namespace Atlas.Core.Models
         public int Id  { get; set; }
         public string HouseHoldName { get; set; }
         public ICollection<Resident> Residents { get; set; }
+        public int ZoneId { get; set; }
+        public Zone Zone { get; set; }
     }
 }
