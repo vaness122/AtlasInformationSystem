@@ -19,12 +19,18 @@ namespace Atlas.DAL.Repositories
        
         public async Task<IEnumerable<Household>> GetAllAsync()
         {
-            return await _context.Households.Include(h => h.Residents).ToListAsync();
+            return await _context.Households
+                .Include(h => h.Zone) //include zozne
+                .Include(h => h.Residents)
+                .ToListAsync();
         }
 
         public async Task<Household> GetByIdAsync(int id)
         {
-            return await _context.Households.Include(h => h.Residents).FirstOrDefaultAsync(h => h.Id == id);
+            return await _context.Households
+                .Include(h => h.Zone) //include zone
+                .Include(h => h.Residents)
+                .FirstOrDefaultAsync(h => h.Id == id);
         }
 
         public async Task AddAsync(Household household)

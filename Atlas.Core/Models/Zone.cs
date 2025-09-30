@@ -13,9 +13,12 @@ namespace Atlas.Core.Models
         public string Name { get; set; }
         public string Desctiption { get; set; }
         public int BarangayId   { get; set; } //foreign key of barangay class
+        public int HouseholdId { get; set; }
+        public Household Household { get; set; }
 
 
         public Barangay Barangay { get; set; }
+        public ICollection<Household>Households { get; set; } = new List<Household>();
         public ICollection<Resident> Residents { get; set; } = new List<Resident>();
 
     }

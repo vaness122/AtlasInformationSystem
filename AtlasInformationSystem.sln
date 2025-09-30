@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36221.1 d17.14
+VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atlas.API", "Atlas.API\Atlas.API.csproj", "{F404BA94-41BB-4618-856C-7B7B4FAC9544}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atlas.DAL", "Atlas.DAL\Atlas.DAL.csproj", "{36C31DA2-AC0D-432C-B64A-DB7684D5856D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atlas.Shared", "Atlas.Shared\Atlas.Shared.csproj", "{8B2AEC20-1EFE-40A6-86D7-09E9DAD55697}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atlas.BAL", "Atlas.BAL\Atlas.BAL.csproj", "{79C08BAB-2E04-4327-9F2C-54D3498C5CA8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{8B2AEC20-1EFE-40A6-86D7-09E9DAD55697}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B2AEC20-1EFE-40A6-86D7-09E9DAD55697}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B2AEC20-1EFE-40A6-86D7-09E9DAD55697}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79C08BAB-2E04-4327-9F2C-54D3498C5CA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79C08BAB-2E04-4327-9F2C-54D3498C5CA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79C08BAB-2E04-4327-9F2C-54D3498C5CA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79C08BAB-2E04-4327-9F2C-54D3498C5CA8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

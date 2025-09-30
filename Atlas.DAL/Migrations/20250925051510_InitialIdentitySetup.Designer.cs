@@ -4,6 +4,7 @@ using Atlas.DAL.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,13 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Atlas.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250925051510_InitialIdentitySetup")]
+    partial class InitialIdentitySetup
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "9.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -91,9 +94,6 @@ namespace Atlas.DAL.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<int?>("ZoneId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("BarangayId");
@@ -107,8 +107,6 @@ namespace Atlas.DAL.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.HasIndex("ZoneId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -151,12 +149,7 @@ namespace Atlas.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ZoneId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("ZoneId");
 
                     b.ToTable("Households");
                 });
@@ -266,12 +259,6 @@ namespace Atlas.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("HouseholdId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("HouseholdId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -279,8 +266,6 @@ namespace Atlas.DAL.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BarangayId");
-
-                    b.HasIndex("HouseholdId1");
 
                     b.ToTable("Zones");
                 });
@@ -460,15 +445,9 @@ namespace Atlas.DAL.Migrations
                         .HasForeignKey("MunicipalityId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Atlas.Core.Models.Zone", "Zone")
-                        .WithMany()
-                        .HasForeignKey("ZoneId");
-
                     b.Navigation("Barangay");
 
                     b.Navigation("Municipality");
-
-                    b.Navigation("Zone");
                 });
 
             modelBuilder.Entity("Atlas.Core.Models.Barangay", b =>
@@ -480,17 +459,6 @@ namespace Atlas.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("Municipality");
-                });
-
-            modelBuilder.Entity("Atlas.Core.Models.Household", b =>
-                {
-                    b.HasOne("Atlas.Core.Models.Zone", "Zone")
-                        .WithMany("Households")
-                        .HasForeignKey("ZoneId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Zone");
                 });
 
             modelBuilder.Entity("Atlas.Core.Models.Residents.Resident", b =>
@@ -520,15 +488,7 @@ namespace Atlas.DAL.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Atlas.Core.Models.Household", "Household")
-                        .WithMany()
-                        .HasForeignKey("HouseholdId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Barangay");
-
-                    b.Navigation("Household");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -603,8 +563,6 @@ namespace Atlas.DAL.Migrations
 
             modelBuilder.Entity("Atlas.Core.Models.Zone", b =>
                 {
-                    b.Navigation("Households");
-
                     b.Navigation("Residents");
                 });
 #pragma warning restore 612, 618
