@@ -59,15 +59,17 @@ namespace Atlas.BAL.Services
                 //generating jwt toen
                 var token = await GenerateJwtToken(user);
 
-                _logger.LogInformation($"Success login for user: {user.UserName}");
+                _logger.LogInformation($"Success login for user: {user.Email}");
                 return AuthResponse.Success(
                      token: token,
                      expiration: DateTime.UtcNow.AddMinutes(_configuration.GetValue<int>("JWT:TokenValidityMinutes")),
                      userName: user.UserName,
+                     email : user.Email,
                      role: user.Role.ToString(),
                      userId: user.Id,
                      barangayId: user.BarangayId ?? 0,
-                     municipalityId: user.MunicipalityId ?? 0
+                     municipalityId: user.MunicipalityId ?? 0,
+                     zoneId : user.ZoneId ?? 0
                  );
 
             }
@@ -96,15 +98,15 @@ namespace Atlas.BAL.Services
 
                 var user = new AppUser
                 {
-                    UserName = registerDto.Email,
                     Email = registerDto.Email,
                     FirstName = registerDto.FirstName,
                     LastName = registerDto.LastName,
                     Role = registerDto.Role,
-                    Username = registerDto.Username,
+                    UserName = registerDto.UserName,
                     MunicipalityId = registerDto.MunicipalityId,
                     BarangayId = registerDto.BarangayId,
-                    ZoneId = registerDto.ZoneId,
+                    ZoneId = registerDto.ZoneId
+                    
                 };
 
                 //creating user with password
@@ -117,11 +119,11 @@ namespace Atlas.BAL.Services
                 }
 
                 //ensuring if role exists
-                var roleName = registerDto.ToString();
+                var roleName = registerDto.Role.ToString();
                 if (!await _roleManager.RoleExistsAsync(roleName))
                 {
                     await _roleManager.CreateAsync(new IdentityRole(roleName));
-                    _logger.LogInformation($"Created new eole : {roleName}");
+                    _logger.LogInformation($"Created new role : {roleName}");
                 }
 
                 //assigning role
@@ -130,21 +132,23 @@ namespace Atlas.BAL.Services
 
                 //generate jwt toke
                 var token = await GenerateJwtToken(user);
-                _logger.LogInformation($"Successfully registered user:{user.UserName}");
+                _logger.LogInformation($"Successfully registered user:{user.Email}");
                 return AuthResponse.Success(
                     token: token,
                     expiration: DateTime.UtcNow.AddMinutes(_configuration.GetValue<int>
                     ("JWT:TokenValidityMinutes")),
+                    email : user.Email,
                    userName: user.UserName,
                    role: user.Role.ToString(),
                    userId: user.Id,
-                   barangayId : user.BarangayId ?? 0,
-                   municipalityId : user.MunicipalityId ?? 0);
+                   barangayId: user.BarangayId ?? 0,
+                   municipalityId: user.MunicipalityId ?? 0,
+                   zoneId: user.ZoneId ?? 0); 
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during registration");
-                return AuthResponse.Fail("An error occured during registration");
+                _logger.LogError(ex, $"Error during registration. StackTrace: {ex.StackTrace}");
+                return AuthResponse.Fail($"An error occurred during registration: {ex.Message}");
             }
         }
         //
@@ -154,7 +158,7 @@ namespace Atlas.BAL.Services
            {
                new(ClaimTypes.NameIdentifier, user.Id),
                new(ClaimTypes.Email  , user.Email),
-               new(ClaimTypes.Name , user.UserName),
+              
                new(ClaimTypes.Role , user.Role.ToString()),
                new(JwtRegisteredClaimNames.Jti , Guid.NewGuid().ToString())
            };

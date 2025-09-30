@@ -13,12 +13,14 @@ namespace Atlas.Shared.Responses
         public string ErrorMessage { get; set; }
         public DateTime? TokenExpiration { get; set; }
         public string UserName { get; set; }
+        public string Email { get; set; }
         public string Role { get; set; }
         public string UserId { get; set; }
-        public int BarangayId { get; set; }
-        public int MunicipalityId { get; set; }
+        public int? BarangayId { get; set; }
+        public int? MunicipalityId { get; set; }
+        public int? ZoneId { get; set; }
         public static AuthResponse Success(string token, DateTime expiration, string userName,
-            string role, string userId , int barangayId , int municipalityId)
+            string role, string userId , int barangayId , int municipalityId , int zoneId ,string email)
         {
 
             return new AuthResponse
@@ -27,10 +29,12 @@ namespace Atlas.Shared.Responses
                 Token = token,
                 TokenExpiration = expiration,
                 UserName = userName,
+                Email = email ,
                 Role = role,
                 UserId = userId,
                 BarangayId = barangayId,
-                MunicipalityId = municipalityId
+                MunicipalityId = municipalityId,
+                ZoneId = zoneId
 
 
             };

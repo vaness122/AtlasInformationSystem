@@ -93,6 +93,15 @@ namespace Atlas.DAL.DbContext
             .HasForeignKey(r => r.HousholdId)
             .OnDelete(DeleteBehavior.Restrict);
 
+            // Household - Zone relationship
+            builder.Entity<Household>()
+                .HasOne(h => h.Zone)
+                .WithMany(z => z.Households)
+                .HasForeignKey(h => h.ZoneId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+
             //AppUser - Municipality - Barangay
             builder.Entity<AppUser>()
                 .HasOne(u => u.Municipality)

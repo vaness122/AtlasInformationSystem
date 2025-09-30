@@ -45,7 +45,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JTW:ValidIssueer"],
+            ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
             ValidAudience = builder.Configuration["JWT:ValidAudience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]
@@ -56,11 +56,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 
-builder.Configuration.AddJsonFile("secret.json", optional: false, reloadOnChange: true);
 
 
 
-builder.Services.AddControllers();
+
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -76,6 +76,24 @@ builder.Services.AddTransient<IZoneRepository, ZoneRepository>();
 //services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddControllers();
+
+
+
+
+
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Atlas API",
+        Version = "v1"
+    });
+});
+
+
+
+
 var app = builder.Build();
 
 
@@ -105,7 +123,7 @@ using(var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+   // app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
