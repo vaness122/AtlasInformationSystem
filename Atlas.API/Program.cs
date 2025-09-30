@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+
 //IdentityRole
 builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
@@ -54,7 +55,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JTW:ValidIssueer"],
+            ValidIssuer = builder.Configuration["JTW:ValidIssuer"],
             ValidAudience = builder.Configuration["JWT:ValidAudience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]
@@ -65,7 +66,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 
-builder.Configuration.AddJsonFile("secret.json", optional: false, reloadOnChange: true);
+//builder.Configuration.AddJsonFile("secret.json", optional: false, reloadOnChange: true);
 
 
 
