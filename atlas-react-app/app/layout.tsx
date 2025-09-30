@@ -38,6 +38,7 @@ export default function RootLayout({
         {children} 
         <Footer/>
         <ScrollToTop/>
+            
         </body>
         
     </html>
