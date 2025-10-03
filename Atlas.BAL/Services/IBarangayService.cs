@@ -9,7 +9,9 @@ namespace Atlas.BAL.Services
 {
     public interface IBarangayService
     {
-        Task<IEnumerable<ZoneDto>> GetAllZoneAsync();
+        
+        
+          
 
     }
 }

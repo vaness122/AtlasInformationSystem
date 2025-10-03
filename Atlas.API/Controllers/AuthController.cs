@@ -9,7 +9,9 @@ using System.Security.Claims;
 
 namespace Atlas.API.Controllers
 {
-    public class AuthController : Controller
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
@@ -21,10 +23,7 @@ namespace Atlas.API.Controllers
             _authService = authService;
             _logger = logger;
         }
-        public IActionResult Index()
-        {
-            return View();
-        }
+       
 
         [HttpPost("register")]
         [AllowAnonymous]
@@ -157,6 +156,7 @@ namespace Atlas.API.Controllers
                 {
                     userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
                     Email = User.FindFirst(ClaimTypes.Email)?.Value,
+                    
                     Role = User.FindFirst(ClaimTypes.Role)?.Value,
                     BarangayId = User.FindFirst("BarangayId")?.Value,
                     MunicipalityId = User.FindFirst("MunicipalityId")?.Value

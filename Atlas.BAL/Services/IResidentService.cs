@@ -1,4 +1,4 @@
-﻿using Atlas.Shared.DTOs;
+﻿ using Atlas.Shared.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +15,7 @@ namespace Atlas.BAL.Services
         Task<ResidentDto> CreateAsync(ResidentDto residentDto);
         Task<ResidentDto> UpdateAsync(ResidentDto residentDto);
         Task<ResidentDto> DeleteAsync(int id);
+        
       
     }
 }

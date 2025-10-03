@@ -67,7 +67,7 @@ namespace Atlas.BAL.Services
                      email : user.Email,
                      role: user.Role.ToString(),
                      userId: user.Id,
-                     barangayId: user.BarangayId ?? 0,
+                     barangayId: user.BarangayId ?? 0,  
                      municipalityId: user.MunicipalityId ?? 0,
                      zoneId : user.ZoneId ?? 0
                  );
