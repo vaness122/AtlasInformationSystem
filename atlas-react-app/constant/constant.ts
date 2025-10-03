@@ -3,7 +3,7 @@ export const navlinks =[
 
     {
       id:1,
-      url:'#',
+      url:'#Home',
       label:'Home',
     },
 
@@ -49,7 +49,9 @@ export const navlinks =[
 
      {
       id:7,
-      url:'contact',
+      url:'#contact',
       label:'Contact',
-    },
+     },
+    
+  
 ];
