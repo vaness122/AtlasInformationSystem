@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from  "../context/authContext";
+import { useAuth } from  "../context/AuthContext";
 
 export default function DashboardPage() {
   const { token, logout, isAuthenticated } = useAuth();

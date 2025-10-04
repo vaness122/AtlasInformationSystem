@@ -16,7 +16,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ ShowNav, closeNav }) => {
       {/* Overlay */}
       <div
         onClick={closeNav}
-        className={`fixed $(navOpen) inset-0 z-[1002] bg-black transition-opacity duration-500 ${
+        className={`fixed $(navOpen) inset-0 z-[1002] bg-black ... ${
           ShowNav ? 'opacity-70 visible' : 'opacity-0 invisible'
         }`}
       />
