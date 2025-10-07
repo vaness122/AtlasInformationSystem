@@ -70,17 +70,16 @@ namespace Atlas.API.Controllers
             }
         }
 
-
         private bool IsValidAdminRole(UserRole role)
         {
             return role == UserRole.SuperAdmin ||
-                role == UserRole.MunicipalityAdmin ||
-                role == UserRole.BarangayAdmin;
+                   role == UserRole.MunicipalityAdmin ||
+                   role == UserRole.BarangayAdmin;
         }
 
         private AuthResponse? ValidateRoleRequirements(RegisterDto dto)
         {
-            switch(dto.Role)
+            switch (dto.Role)
             {
                 case UserRole.BarangayAdmin:
                     if (!dto.MunicipalityId.HasValue)
@@ -100,12 +99,9 @@ namespace Atlas.API.Controllers
                     if (dto.MunicipalityId.HasValue || dto.BarangayId.HasValue)
                         return AuthResponse.Fail("SuperAdmin should not have MunicipalityId and BarangayId");
                     break;
-
-
             }
-            return null; 
+            return null;
         }
-
 
         //login
 
@@ -115,7 +111,7 @@ namespace Atlas.API.Controllers
         {
             try
             {
-                if(!ModelState.IsValid)
+                if (!ModelState.IsValid)
                 {
                     return BadRequest(new AuthResponse
                     {
@@ -126,7 +122,7 @@ namespace Atlas.API.Controllers
                 }
 
                 var result = await _authService.LoginAsync(loginDto);
-                if(!result.isAuthenticated)
+                if (!result.isAuthenticated)
                 {
                     _logger.LogWarning($"Failed login attempt for {loginDto.Email}");
                     return Unauthorized(result);
@@ -180,4 +176,4 @@ namespace Atlas.API.Controllers
 
 
     }
-    } 
+}

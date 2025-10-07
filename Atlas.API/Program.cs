@@ -1,10 +1,8 @@
-using Atlas.BAL.Services;
+﻿using Atlas.BAL.Services;
 using Atlas.Core.Enum;
 using Atlas.Core.Models;
-using Atlas.Core.Models.Residents;
 using Atlas.DAL.Data;
 using Atlas.DAL.DbContext;
-
 using Atlas.DAL.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -16,7 +14,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add CORS policy to allow requests from your Next.js frontend running on localhost:3000
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs", policy =>
@@ -27,120 +25,112 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add DbContext and configure SQL Server connection
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-//IdentityRole
+// Add Identity services with AppUser and IdentityRole
 builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-//authorization policies
+// Add authorization policies for roles
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("SuperAdmin", policy =>
-    policy.RequireRole(UserRole.SuperAdmin.ToString()));
+        policy.RequireRole(UserRole.SuperAdmin.ToString()));
 
     options.AddPolicy("MunicipalityAdmin", policy =>
-    policy.RequireRole(UserRole.MunicipalityAdmin.ToString()));
-
-
-
+        policy.RequireRole(UserRole.MunicipalityAdmin.ToString()));
 });
 
+// Configure JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("JWT");
+var secretKey = jwtSettings["Secret"];
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options => {
-        options.TokenValidationParameters = new
-    TokenValidationParameters
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JTW:ValidIssuer"],
-            ValidAudience = builder.Configuration["JWT:ValidAudience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]
-                ))
-
-
+            ValidIssuer = jwtSettings["ValidIssuer"],
+            ValidAudience = jwtSettings["ValidAudience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
 
-
-//builder.Configuration.AddJsonFile("secret.json", optional: false, reloadOnChange: true);
-
-
-
-
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-//repos
+// Register repositories
 builder.Services.AddTransient<IResidentRepository, ResidentRepository>();
 builder.Services.AddTransient<IHouseholdRepository, HouseholdRepository>();
 builder.Services.AddTransient<IBarangayRepository, BarangayRepository>();
 builder.Services.AddTransient<IMunicipalityRepository, MunicipalityRepository>();
 builder.Services.AddTransient<IZoneRepository, ZoneRepository>();
 
-//services
+// Register application services
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Add controllers
 builder.Services.AddControllers();
 
-
-
-
-
-
+// Add Swagger/OpenAPI support
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Atlas API",
         Version = "v1"
     });
+
+    // Add JWT Authentication to Swagger UI
+    var securityScheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT Bearer token **_only_**"
+    };
+
+    options.AddSecurityDefinition("Bearer", securityScheme);
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { securityScheme, Array.Empty<string>() }
+    });
 });
-
-
-
 
 var app = builder.Build();
 
-
-using(var scope = app.Services.CreateScope())
-
+// Seed roles into the database on startup
+using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-        try
+    try
     {
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         await IdentityDataInitializer.SeedRolesAsync(roleManager);
     }
-    catch(Exception ex)
+    catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An Error occured while seeding roles");
+        logger.LogError(ex, "An error occurred while seeding roles");
     }
-
-
 }
-
-
-
-
-
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-   // app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseCors("AllowNextJs");
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowNextJs");
 
 app.UseAuthentication();
 app.UseAuthorization();

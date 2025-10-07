@@ -1,21 +1,27 @@
-"use client";
-import React, { useState } from 'react';
 
+"use client";
+import React, { use, useState } from 'react'
 import Nav from './Nav'
 import MobileNav from './MobileNav'
 
 
 const ResponsiveNav = () => {
-    const [showNav, setShowNav] = useState(false);
+  const pathname = usePathname();
 
-  const openNavHandler = () =>setShowNav(true);
-  const closeNavHandler = () =>setShowNav(false);
+  const [showNav, setShowNav] = useState(false);
+
+  const openNavHandler = () => setShowNav(true);
+  const closeNavHandler = () => setShowNav(false);
+
+  // Hide nav completely on /register page
+  if (pathname === '/register' || pathname === '/login') {
+    return null;
+  }
 
   return (
     <div>
-        <Nav openNav={openNavHandler}/>
-        <MobileNav ShowNav={showNav} closeNav={closeNavHandler}/>
-
+      <Nav openNav={openNavHandler} />
+      <MobileNav ShowNav={showNav} closeNav={closeNavHandler} />
     </div>
   );
 };
