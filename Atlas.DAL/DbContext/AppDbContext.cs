@@ -70,7 +70,6 @@ namespace Atlas.DAL.DbContext
 
             
 
-
             //Municipality-= Barangay
             builder.Entity<Barangay>()
                 .HasOne(b => b.Municipality)
@@ -107,13 +106,57 @@ namespace Atlas.DAL.DbContext
                 .HasOne(u => u.Municipality)
                 .WithMany(m => m.Admins)
                 .HasForeignKey(u => u.MunicipalityId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict); 
 
             builder.Entity<AppUser>()
                 .HasOne(u => u.Barangay)
                 .WithMany(b => b.Admins)
                 .HasForeignKey(u => u.BarangayId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<AppUser>()
+                .HasOne(u => u.Zone)
+                .WithMany()
+                .HasForeignKey(u => u.ZoneId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+
+
+            //Seeding Iloilo Municipality
+
+            builder.Entity<Municipality>().HasData(
+                new Municipality
+                {
+                    Id = 1,
+                    Name = "Ajuy",
+                    Code = "AJY",
+                    Region = "Region VI (Western Visayas)",
+                    Province = "Iloilo"
+
+                }
+
+
+                );
+
+            builder.Entity<Barangay>().HasData(
+        new Barangay
+        {
+            Id = 1,
+            Name = "Adcadarao",
+            Code = "ADC",
+            MunicipalityId = 1
+        }
+    );
+
+
+
+
+
+
 
 
 

@@ -4,6 +4,7 @@ using Atlas.DAL.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Atlas.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251008015645_FixUserRelationships")]
+    partial class FixUserRelationships
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -137,15 +140,6 @@ namespace Atlas.DAL.Migrations
                     b.HasIndex("MunicipalityId");
 
                     b.ToTable("Barangays");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Code = "ADC",
-                            MunicipalityId = 1,
-                            Name = "Adcadarao"
-                        });
                 });
 
             modelBuilder.Entity("Atlas.Core.Models.Household", b =>
@@ -197,16 +191,6 @@ namespace Atlas.DAL.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Municipalities");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Code = "AJY",
-                            Name = "Ajuy",
-                            Province = "Iloilo",
-                            Region = "Region VI (Western Visayas)"
-                        });
                 });
 
             modelBuilder.Entity("Atlas.Core.Models.Residents.Resident", b =>

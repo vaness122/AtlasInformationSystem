@@ -53,6 +53,36 @@ namespace Atlas.API.Controllers
                     return BadRequest(validationError);
                 }
 
+
+                //proper null values based on role 
+
+
+                if (registerDto.Role == UserRole.SuperAdmin)
+                {
+                    registerDto.MunicipalityId = null;
+                    registerDto.BarangayId = null;
+                    registerDto.ZoneId = null;
+                }
+                else if (registerDto.Role == UserRole.MunicipalityAdmin)
+                {
+                    registerDto.BarangayId = null;
+                    registerDto.ZoneId = null;
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 var result = await _authService.RegisterAsync(registerDto);
 
                 if (!result.isAuthenticated)

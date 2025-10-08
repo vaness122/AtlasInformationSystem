@@ -1,7 +1,9 @@
 ﻿using Atlas.Core.Models;
+using Atlas.DAL.DbContext;
 using Atlas.Shared.DTOs;
 using Atlas.Shared.Responses;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -21,12 +23,14 @@ namespace Atlas.BAL.Services
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthService> _logger;
+        private readonly AppDbContext _context;
 
         public AuthService(
             UserManager<AppUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IConfiguration configuration,
-            ILogger<AuthService> logger
+            ILogger<AuthService> logger,
+            AppDbContext context
             )
 
         {
@@ -34,6 +38,7 @@ namespace Atlas.BAL.Services
             _roleManager = roleManager;
             _configuration = configuration;
             _logger = logger;
+            _context = context;
 
 
         }
@@ -109,6 +114,55 @@ namespace Atlas.BAL.Services
                     
                 };
 
+                //adding validation for foreign key relationships
+                if (registerDto.MunicipalityId.HasValue)
+                {
+                    //verify if municipality exists
+
+                var municipalityExists = await _context.Municipalities.AnyAsync(m => m.Id ==
+                registerDto.MunicipalityId.Value);
+                    if(!municipalityExists)
+                    {
+                        return AuthResponse.Fail("Specified MunicipalityId does not exist");
+                    }
+
+
+                }
+
+                if(registerDto.BarangayId.HasValue)
+                {
+                    //verify barangay exists and belongs to the specified municipality
+                    var barangayExists = await _context.Barangays.AnyAsync(b => b.Id ==
+                    registerDto.BarangayId.Value);
+                    if(!barangayExists)
+                    {
+                        return AuthResponse.Fail("Specified BarangayId does not exist");
+                    }
+
+
+                }
+
+
+
+                if (registerDto.ZoneId.HasValue)
+                {
+                    // Verify zone exists
+                    var zoneExists = await _context.Zones.AnyAsync(z => z.Id == registerDto.ZoneId.Value);
+                    if (!zoneExists)
+                    {
+                        return AuthResponse.Fail("Specified ZoneId does not exist");
+                    }
+                }
+
+
+
+
+
+
+
+
+
+
                 //creating user with password
                 var result = await _userManager.CreateAsync(user, registerDto.Password);
                 if (!result.Succeeded)
@@ -147,8 +201,8 @@ namespace Atlas.BAL.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error during registration. StackTrace: {ex.StackTrace}");
-                return AuthResponse.Fail($"An error occurred during registration: {ex.Message}");
+                 _logger.LogError(ex, $"Error during registration. Message: {ex.Message}, Inner: {ex.InnerException?.Message}");
+                return AuthResponse.Fail($"An error occurred during registration: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
         //
