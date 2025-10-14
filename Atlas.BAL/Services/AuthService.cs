@@ -45,11 +45,7 @@ namespace Atlas.BAL.Services
 
         public async Task<AppUser> GetUserById(string userId)
         {
-            return await _userManager.Users
-         .Include(u => u.Municipality)
-         .Include(u => u.Barangay)
-         .Include(u => u.Zone)
-         .FirstOrDefaultAsync(u => u.Id == userId);
+            return await _userManager.FindByIdAsync(userId);
         }
 
         public async Task<AuthResponse> LoginAsync(LoginDto loginDto)

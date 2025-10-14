@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 
@@ -48,16 +48,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      setMessage("Already logged in. Redirecting to dashboard...");
-      const timer = setTimeout(() => {
-        router.push("/dashboard");
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthenticated, router]);
 
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
@@ -113,14 +103,6 @@ export default function LoginPage() {
     [email, password, login, router]
   );
 
-  if (isAuthenticated) {
-    return (
-      <main className="flex items-center justify-center min-h-screen bg-gray-100">
-        <p className="text-xl font-semibold text-blue-600">{message}</p>
-      </main>
-    );
-  }
-
   return (
     <main
       className="flex items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat"
@@ -132,73 +114,80 @@ export default function LoginPage() {
       >
         <h1 className="text-3xl font-extrabold mb-8 text-center text-gray-900">Atlas Login</h1>
 
-        <form onSubmit={handleLogin} className="space-y-6" noValidate>
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (message) setMessage("");
-              }}
-              required
-              placeholder="user@example.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
+        {isAuthenticated ? (
+          <div className="text-center text-green-600 font-medium">
+            You are already logged in.
           </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1">
-              Password
-            </label>
-            <div className="relative">
+        ) : (
+          <form onSubmit={handleLogin} className="space-y-6" noValidate>
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
+                Email Address
+              </label>
               <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
+                id="email"
+                type="email"
+                value={email}
                 onChange={(e) => {
-                  setPassword(e.target.value);
+                  setEmail(e.target.value);
                   if (message) setMessage("");
                 }}
                 required
-                placeholder="Enter your password"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 pr-10"
+                placeholder="user@example.com"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 transition"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <IconEyeOff /> : <IconEye />}
-              </button>
             </div>
-          </div>
 
-          {message && (
-            <p
-              className={`mt-4 text-center text-sm font-medium ${
-                message.toLowerCase().includes("successful") || message.toLowerCase().includes("redirecting")
-                  ? "text-green-600"
-                  : "text-red-600"
-              }`}
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (message) setMessage("");
+                  }}
+                  required
+                  placeholder="Enter your password"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 transition"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <IconEyeOff /> : <IconEye />}
+                </button>
+              </div>
+            </div>
+
+            {message && (
+              <p
+                className={`mt-4 text-center text-sm font-medium ${
+                  message.toLowerCase().includes("success") ||
+                  message.toLowerCase().includes("redirecting")
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {message}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-[1.01] disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {message}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-[1.01] disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? "Logging In..." : "Log In"}
-          </button>
-        </form>
+              {loading ? "Logging In..." : "Log In"}
+            </button>
+          </form>
+        )}
 
         <p className="mt-8 text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}

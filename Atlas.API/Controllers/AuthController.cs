@@ -13,7 +13,7 @@ using System.Security.Claims;
 namespace Atlas.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -185,19 +185,29 @@ namespace Atlas.API.Controllers
         public async Task<IActionResult> GetCurrentUserAsync()
         {
 
-          
+
 
             try
             {
-
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
                 if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogInformation("Me endpoint hit but User ID claim is missing!");
                     return Unauthorized("User ID claim is missing");
+                }
+                else
+                {
+                    _logger.LogInformation($"Me endpoint hit by User ID: {userId}");
+                }
 
                 var user = await _authService.GetUserById(userId);
 
                 if (user == null)
+                {
+                    _logger.LogInformation($"User not found for ID: {userId}");
                     return NotFound("User not found");
+                }
 
                 var userInfo = new
                 {
@@ -211,15 +221,14 @@ namespace Atlas.API.Controllers
                     LastName = user.LastName
                 };
 
+                _logger.LogInformation($"Returning user info for User ID: {userId}");
+
                 return Ok(userInfo);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current user");
-                return StatusCode(500, "An error occured while retrieving user information");
-
-
-
+                return StatusCode(500, "An error occurred while retrieving user information");
             }
         }
 

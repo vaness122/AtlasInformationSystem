@@ -1,4 +1,5 @@
-﻿using Atlas.BAL.Services;
+﻿using Atlas.API.Swagger;
+using Atlas.BAL.Services;
 using Atlas.Core.Enum;
 using Atlas.Core.Models;
 using Atlas.DAL.Data;
@@ -19,7 +20,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3002")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -48,20 +49,24 @@ builder.Services.AddAuthorization(options =>
 var jwtSettings = builder.Configuration.GetSection("JWT");
 var secretKey = jwtSettings["Secret"];
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["ValidIssuer"],
-            ValidAudience = jwtSettings["ValidAudience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
-        };
-    });
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["ValidIssuer"],
+        ValidAudience = jwtSettings["ValidAudience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+    };
+});
 
 // Register repositories
 builder.Services.AddTransient<IResidentRepository, ResidentRepository>();
@@ -98,7 +103,7 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "Enter JWT Bearer token **_only_**"
     };
-
+    options.OperationFilter<AuthorizeCheckOperationsFilter>();
     options.AddSecurityDefinition("Bearer", securityScheme);
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -135,6 +140,7 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowNextJs");
 
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
