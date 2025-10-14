@@ -9,8 +9,7 @@ namespace Atlas.BAL.Services
 {
     public interface IMunicipalityService
     {
-        
-        Task<IEnumerable<BarangayDto>> GetAllBarangayAsync();
-        Task<IEnumerable<ZoneDto>> GetAllZoneAsync();
+        Task<IEnumerable<MunicipalityDto>> GetAllMunicipalitiesAsync();
+
     }
 }

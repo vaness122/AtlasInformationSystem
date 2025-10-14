@@ -11,7 +11,7 @@ namespace Atlas.Core.Models
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string Desctiption { get; set; }
+        public string Desciption { get; set; }
         public int BarangayId   { get; set; } //foreign key of barangay class
        
 

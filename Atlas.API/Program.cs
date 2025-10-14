@@ -72,6 +72,9 @@ builder.Services.AddTransient<IZoneRepository, ZoneRepository>();
 
 // Register application services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IMunicipalityService, MunicipalityService>();
+builder.Services.AddScoped<IBarangayService ,  BarangayService>();
+builder.Services.AddScoped<IZoneService , ZoneService>();
 
 // Add controllers
 builder.Services.AddControllers();
@@ -134,6 +137,7 @@ app.UseCors("AllowNextJs");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 app.MapControllers();
 

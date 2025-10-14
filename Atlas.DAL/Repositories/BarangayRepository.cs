@@ -52,5 +52,15 @@ namespace Atlas.DAL.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+
+       
+
+        async Task<IEnumerable<Barangay>> IBarangayRepository.GetByMunicipalityIdAsync(int municipalityId)
+        {
+           return await _context.Barangays
+                .Include(b => b.Municipality)
+                .Where(b => b.MunicipalityId == municipalityId)
+                .ToListAsync();
+        }
     }
 }

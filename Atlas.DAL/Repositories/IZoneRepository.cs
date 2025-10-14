@@ -8,5 +8,7 @@ public interface IZoneRepository
     Task<Zone> GetByIdAsync(int id);       
     Task AddAsync(Zone zone);              
     Task UpdateAsync(Zone zone);            
-    Task DeleteAsync(int id);              
-}
+    Task DeleteAsync(int id);
+    Task<IEnumerable<Zone>> GetByBarangayIdAsync(int barangayId);
+   
+}  

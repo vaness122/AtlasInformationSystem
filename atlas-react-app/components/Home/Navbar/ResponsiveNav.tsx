@@ -3,6 +3,7 @@
 import React, { use, useState } from 'react'
 import Nav from './Nav'
 import MobileNav from './MobileNav'
+import { usePathname } from 'next/navigation';
 
 
 const ResponsiveNav = () => {

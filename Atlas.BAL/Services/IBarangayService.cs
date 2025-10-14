@@ -9,9 +9,8 @@ namespace Atlas.BAL.Services
 {
     public interface IBarangayService
     {
-        
-        
-          
+        Task<IEnumerable<BarangayDto>> GetAllBarangaysAsync();
+        Task<IEnumerable<BarangayDto>> GetBarangaysByMunicipalityAsync(int municipalityId);
 
     }
 }

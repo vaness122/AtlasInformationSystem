@@ -1,4 +1,5 @@
-﻿using Atlas.Shared.DTOs;
+﻿using Atlas.Core.Models;
+using Atlas.Shared.DTOs;
 using Atlas.Shared.Responses;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using System;
@@ -13,5 +14,6 @@ namespace Atlas.BAL.Services
     {
         Task<AuthResponse> RegisterAsync(RegisterDto registerDto);
         Task<AuthResponse> LoginAsync(LoginDto loginDto);
+        Task<AppUser> GetUserById(string userId);
     }
 }

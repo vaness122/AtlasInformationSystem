@@ -1,12 +1,40 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Atlas.BAL.Services;
+using Atlas.Shared.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Atlas.API.Controllers
 {
-    public class MunicipalityController : Controller
+    [ApiController]
+    [Route("api/municipalities")]
+    public class MunicipalityController : ControllerBase
     {
-        public IActionResult Index()
+
+        private readonly IMunicipalityService _municipalityService;
+        private readonly IBarangayService _barangayService;
+
+        public MunicipalityController(IMunicipalityService municipalityService , IBarangayService barangayService)
         {
-            return View();
+            _municipalityService = municipalityService;
+            _barangayService = barangayService;
         }
+
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<MunicipalityDto>>> GetMunicipalities()
+        {
+            var municipalities = await _municipalityService.GetAllMunicipalitiesAsync();
+            return Ok(municipalities);
+        }
+
+        [HttpGet("{id}/barangays")]
+        public async Task<ActionResult<IEnumerable<BarangayDto>>> GetBarangaysByMunicipality(int id)
+        {
+            var barangays = await _barangayService.GetBarangaysByMunicipalityAsync(id);
+            return Ok(barangays);
+        }
+
+
+
+
     }
 }

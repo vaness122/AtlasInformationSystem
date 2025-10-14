@@ -9,4 +9,7 @@ public interface IBarangayRepository
     Task AddAsync(Barangay barangay);            // Async method
     Task UpdateAsync(Barangay barangay);         // Async method
     Task DeleteAsync(int id);                    // Async method
+    Task<IEnumerable<Barangay>> GetByMunicipalityIdAsync(int municipalityId);
+
+
 }

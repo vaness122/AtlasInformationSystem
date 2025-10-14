@@ -52,5 +52,13 @@ namespace Atlas.DAL.Repositories
                 await _context.SaveChangesAsync();  
             }
         }
+
+        public async Task<IEnumerable<Zone>> GetByBarangayIdAsync(int barangayId)
+        {
+          return await _context.Zones
+                .Include(z => z.Barangay)
+                .Where(z => z.BarangayId == barangayId)
+                .ToListAsync();
+        }
     }
 }

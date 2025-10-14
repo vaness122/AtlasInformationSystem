@@ -9,6 +9,7 @@ namespace Atlas.BAL.Services
 {
     public interface IZoneService
     {
-        Task<IEnumerable<HouseholdDto>> GetHouseholdAsync();
+        Task<IEnumerable<ZoneDto>> GetAllZonesAsync();
+        Task<IEnumerable<ZoneDto>> GetZonesByBarangayAsync(int barangayId);
     }
 }

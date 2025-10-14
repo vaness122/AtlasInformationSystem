@@ -1,9 +1,12 @@
 ﻿using Atlas.BAL.Services;
 using Atlas.Core.Enum;
+using Atlas.Core.Models;
 using Atlas.Shared.DTOs;
 using Atlas.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Security.Claims;
 
@@ -15,13 +18,18 @@ namespace Atlas.API.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
+        private readonly UserManager<AppUser> _userManager;
 
         public AuthController(
             IAuthService authService,
-            ILogger<AuthController> logger)
+            ILogger<AuthController> logger,
+            UserManager<AppUser> userManagaer)
+         
         {
             _authService = authService;
             _logger = logger;
+            _userManager = userManagaer;
+           
         }
        
 
@@ -174,22 +182,36 @@ namespace Atlas.API.Controllers
         //getting the current user
         [HttpGet("me")]
         [Authorize]
-        public IActionResult GetCurrentUser()
+        public async Task<IActionResult> GetCurrentUserAsync()
         {
+
+          
+
             try
             {
+
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized("User ID claim is missing");
+
+                var user = await _authService.GetUserById(userId);
+
+                if (user == null)
+                    return NotFound("User not found");
+
                 var userInfo = new
                 {
-                    userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-                    Email = User.FindFirst(ClaimTypes.Email)?.Value,
-                    
-                    Role = User.FindFirst(ClaimTypes.Role)?.Value,
-                    BarangayId = User.FindFirst("BarangayId")?.Value,
-                    MunicipalityId = User.FindFirst("MunicipalityId")?.Value
+                    userId = user.Id,
+                    Email = user.Email,
+                    Role = user.Role.ToString(),
+                    BarangayId = user.BarangayId,
+                    MunicipalityId = user.MunicipalityId,
+                    ZoneId = user.ZoneId,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName
                 };
 
                 return Ok(userInfo);
-
             }
             catch (Exception ex)
             {
@@ -201,6 +223,11 @@ namespace Atlas.API.Controllers
             }
         }
 
+        [HttpGet("hello")]
+        public IActionResult Hello()
+        {
+            return Ok("Helloworld");
+        }
 
 
 

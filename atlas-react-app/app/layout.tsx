@@ -4,6 +4,8 @@ import "./globals.css";
 import ResponsiveNav from "@/components/Home/Navbar/ResponsiveNav";
 import Footer from "@/components/Home/Footer/Footer";
 import ScrollToTop from "@/components/Helper/ScrollToTop";
+import {AuthProvider} from "@/app/context/AuthContext";
+
 
 const font = Rethink_Sans({
   
@@ -34,11 +36,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${font.className}  antialiased`}>
+      <AuthProvider>
       <ResponsiveNav/>
         {children} 
         <Footer/>
         <ScrollToTop/>
-            
+      </AuthProvider>
         </body>
         
     </html>
