@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 
@@ -41,13 +41,20 @@ const IconEyeOff = () => (
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, logout } = useAuth(); // Ensure logout is available if needed
 
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    // If user is already authenticated, redirect them to the dashboard
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
@@ -85,7 +92,7 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (data.token) {
-          login(data.token);
+          login(data.token); // This should set isAuthenticated to true in your context
           setMessage("Login successful! Redirecting...");
           setTimeout(() => {
             router.push("/dashboard");
