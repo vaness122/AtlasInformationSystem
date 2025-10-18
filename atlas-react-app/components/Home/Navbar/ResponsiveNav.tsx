@@ -15,7 +15,8 @@ const ResponsiveNav = () => {
   const closeNavHandler = () => setShowNav(false);
 
   // Hide nav completely on /register page
-  if (pathname === '/register' || pathname === '/login') {
+  if (pathname === '/register' || pathname === '/login' || pathname === '/dashboard' || pathname === '/dashboard/profile'|| pathname === '/dashboard/zones'  || pathname === '/dashboard/residents' || pathname === '/dashboard/household')
+     {
     return null;
   }
 
