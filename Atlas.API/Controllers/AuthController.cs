@@ -184,51 +184,46 @@ namespace Atlas.API.Controllers
         [Authorize]
         public async Task<IActionResult> GetCurrentUserAsync()
         {
-
-
-
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 if (string.IsNullOrEmpty(userId))
                 {
-                    _logger.LogInformation("Me endpoint hit but User ID claim is missing!");
-                    return Unauthorized("User ID claim is missing");
-                }
-                else
-                {
-                    _logger.LogInformation($"Me endpoint hit by User ID: {userId}");
+                    _logger.LogWarning("User ID claim is missing");
+                    return Unauthorized(new { message = "User ID claim is missing" });
                 }
 
-                var user = await _authService.GetUserById(userId);
-
+                var user = await _userManager.FindByIdAsync(userId);
                 if (user == null)
                 {
-                    _logger.LogInformation($"User not found for ID: {userId}");
-                    return NotFound("User not found");
+                    _logger.LogWarning($"User not found for ID: {userId}");
+                    return NotFound(new { message = "User not found" });
                 }
+
+
+                var roles = await _userManager.GetRolesAsync(user);
 
                 var userInfo = new
                 {
                     userId = user.Id,
                     Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
                     Role = user.Role.ToString(),
+                    Roles = roles,
                     BarangayId = user.BarangayId,
                     MunicipalityId = user.MunicipalityId,
-                    ZoneId = user.ZoneId,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName
+                    ZoneId = user.ZoneId
                 };
 
                 _logger.LogInformation($"Returning user info for User ID: {userId}");
-
                 return Ok(userInfo);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current user");
-                return StatusCode(500, "An error occurred while retrieving user information");
+                return StatusCode(500, new { message = "An error occurred while retrieving user information" });
             }
         }
 

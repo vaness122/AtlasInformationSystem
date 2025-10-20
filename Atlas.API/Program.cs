@@ -1,10 +1,12 @@
 ﻿using Atlas.API.Swagger;
+using Atlas.BAL.Mapping;
 using Atlas.BAL.Services;
 using Atlas.Core.Enum;
 using Atlas.Core.Models;
 using Atlas.DAL.Data;
 using Atlas.DAL.DbContext;
 using Atlas.DAL.Repositories;
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -68,6 +70,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+
+
 // Register repositories
 builder.Services.AddTransient<IResidentRepository, ResidentRepository>();
 builder.Services.AddTransient<IHouseholdRepository, HouseholdRepository>();
@@ -80,6 +84,24 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMunicipalityService, MunicipalityService>();
 builder.Services.AddScoped<IBarangayService ,  BarangayService>();
 builder.Services.AddScoped<IZoneService , ZoneService>();
+builder.Services.AddScoped<IBarangayAdminService , BarangayAdminService>();
+builder.Services.AddScoped<IMunicipalityAdminService , MunicipalityAdminService>();
+
+builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(sp =>
+{
+    var config = new MapperConfiguration(cfg =>
+    {
+        cfg.AddProfile<Atlas.BAL.Mapping.MappingProfile>();
+    });
+    return config;
+});
+
+builder.Services.AddScoped<IMapper>(sp =>
+{
+    var config = sp.GetRequiredService<AutoMapper.IConfigurationProvider>();
+    return new Mapper(config);
+});
+
 
 // Add controllers
 builder.Services.AddControllers();

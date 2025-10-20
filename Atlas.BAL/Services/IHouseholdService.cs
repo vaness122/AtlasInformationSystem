@@ -9,10 +9,11 @@ namespace Atlas.BAL.Services
 {
    public interface IHouseholdService
     {
-        Task<HouseholdDto> GetHousehold(int id);
-        Task<IEnumerable<HouseholdDto>> GetAllHouseHoldAsync(int id);
-        Task<HouseholdDto> CreateHouseholdAsync(HouseholdDto household);
-        Task<HouseholdDto> UpdateHouseholdAsync(HouseholdDto household);
-        Task DeleteHouseholdAsync (int id);
+        Task<IEnumerable<HouseholdDto>> GetAllHouseholdsAsync();
+        Task<HouseholdDto> GetHouseholdByIdAsync(int id);
+        Task<HouseholdDto> CreateHouseholdAsync(CreateHouseholdDto householdDto);
+        Task<HouseholdDto> UpdateHouseholdAsync(int id, UpdateHouseholdDto householdDto);
+        Task<bool> DeleteHouseholdAsync(int id);
+        Task<IEnumerable<HouseholdDto>> GetHouseholdsByZoneAsync(int zoneId);
     }
 }

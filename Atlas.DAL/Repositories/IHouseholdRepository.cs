@@ -10,6 +10,7 @@ namespace Atlas.DAL.Repositories
         Task<Household> GetByIdAsync(int id);  
         Task AddAsync(Household household);  
         Task UpdateAsync(Household household); 
-        Task DeleteAsync(int id); 
+        Task DeleteAsync(int id);
+        Task<IEnumerable<Household>> GetByZoneIdAsync(int zoneId);
     }
 }

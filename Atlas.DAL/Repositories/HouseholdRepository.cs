@@ -56,5 +56,14 @@ namespace Atlas.DAL.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task<IEnumerable<Household>> GetByZoneIdAsync(int zoneId)
+        {
+            return await _context.Households
+           .Include(h => h.Zone)
+           .Include(h => h.Residents)
+           .Where(h => h.ZoneId == zoneId)
+           .ToListAsync();
+        }
     }
 }
