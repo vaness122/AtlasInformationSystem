@@ -58,7 +58,6 @@ namespace Atlas.API.Controllers
                 var validationError = ValidateRoleRequirements(registerDto);
                 if (validationError != null)
                 {
-                    return BadRequest(validationError);
                 }
 
 

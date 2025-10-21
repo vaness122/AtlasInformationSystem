@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext"; // Fixed import path
+import { useAuth } from "../../context/AuthContext";
 import Link from "next/link";
 
 interface Resident {
@@ -716,7 +716,7 @@ export default function ResidentsPage() {
       {/* Sidebar */}
       <div className="w-80 bg-white shadow-lg border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
-          <Link href="/dashboard" className="flex items-center space-x-3 text-blue-600 hover:text-blue-700 transition-colors">
+          <Link href="/barangayadmin/dashboard" className="flex items-center space-x-3 text-blue-600 hover:text-blue-700 transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -727,7 +727,7 @@ export default function ResidentsPage() {
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
             <li>
-              <Link href="/dashboard" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+              <Link href="/barangayadmin/dashboard" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
@@ -735,7 +735,7 @@ export default function ResidentsPage() {
               </Link>
             </li>
             <li>
-              <Link href="/dashboard/profile" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+              <Link href="/barangayadmin/profile" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -743,7 +743,7 @@ export default function ResidentsPage() {
               </Link>
             </li>
             <li>
-              <Link href="/dashboard/zones" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+              <Link href="/barangayadmin/zones" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -751,7 +751,7 @@ export default function ResidentsPage() {
               </Link>
             </li>
             <li>
-              <Link href="/dashboard/household" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+              <Link href="/barangayadmin/household" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
@@ -866,9 +866,7 @@ export default function ResidentsPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Households</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {households.length}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{households.length}</p>
                 </div>
               </div>
             </div>
@@ -882,7 +880,7 @@ export default function ResidentsPage() {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search residents by name or occupation..."
+                      placeholder="Search residents by name, occupation, or address..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -950,16 +948,16 @@ export default function ResidentsPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Full Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Gender
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Occupation
+                        Resident
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Household
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Zone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Occupation
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
@@ -972,36 +970,36 @@ export default function ResidentsPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredResidents.map((resident) => (
                       <tr key={resident.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {resident.firstName} {resident.lastName}
-                                {resident.isHead && (
-                                  <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    Head
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {resident.middleName}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{resident.gender || "N/A"}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{resident.occupation || "N/A"}</div>
-                        </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">
-                            <div className="font-medium">{getHouseholdInfo(resident)}</div>
-                            <div className="text-gray-500 text-xs">
-                              {getZoneInfo(resident)} • {getAddress(resident)}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {resident.firstName} {resident.lastName}
+                              {resident.isHead && (
+                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  Head
+                                </span>
+                              )}
                             </div>
+                            <div className="text-sm text-gray-500">
+                              {resident.gender} • {resident.civilStatus || 'Not specified'}
+                            </div>
+                            {resident.birthdate && (
+                              <div className="text-xs text-gray-400">
+                                Born: {new Date(resident.birthdate).toLocaleDateString()}
+                              </div>
+                            )}
                           </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{getHouseholdInfo(resident)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {getZoneInfo(resident)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{resident.occupation || "Not specified"}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -1013,9 +1011,9 @@ export default function ResidentsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
                             onClick={() => openEditModal(resident)}
-                            className="text-green-600 hover:text-green-900 mr-3"
+                            className="text-blue-600 hover:text-blue-900 mr-3"
                           >
-                            Update
+                            Edit
                           </button>
                           <button 
                             onClick={() => handleDeleteResident(resident.id)}
@@ -1039,7 +1037,7 @@ export default function ResidentsPage() {
               <p className="text-gray-600 mb-4">
                 {searchTerm || selectedHousehold !== "all" || selectedStatus !== "all"
                   ? 'No residents match your search criteria.' 
-                  : 'No residents data available. Start by adding your first resident.'
+                  : 'No residents data available.'
                 }
               </p>
               <button 
