@@ -275,7 +275,7 @@ namespace Atlas.BAL.Services
                 var resident = await _residentRepository.GetByIdAsync(residentId);
                 if (resident == null) return null;
 
-                var household = await _householdRepository.GetByIdAsync(resident.HousholdId);
+                var household = await _householdRepository.GetByIdAsync(resident.HouseholdId);
                 if (household == null) return null;
 
                 var zone = await _zoneRepository.GetByIdAsync(household.ZoneId);
@@ -320,7 +320,7 @@ namespace Atlas.BAL.Services
                 var existingResident = await _residentRepository.GetByIdAsync(id);
                 if (existingResident == null) return null;
 
-                var household = await _householdRepository.GetByIdAsync(existingResident.HousholdId);
+                var household = await _householdRepository.GetByIdAsync(existingResident.HouseholdId);
                 if (household == null) return null;
 
                 var zone = await _zoneRepository.GetByIdAsync(household.ZoneId);
@@ -344,7 +344,7 @@ namespace Atlas.BAL.Services
                 var resident = await _residentRepository.GetByIdAsync(id);
                 if (resident == null) return false;
 
-                var household = await _householdRepository.GetByIdAsync(resident.HousholdId);
+                var household = await _householdRepository.GetByIdAsync(resident.HouseholdId);
                 if (household == null) return false;
 
                 var zone = await _zoneRepository.GetByIdAsync(household.ZoneId);

@@ -26,7 +26,7 @@ namespace Atlas.Core.Models.Residents
         public Barangay Barangay { get; set; }
         public Zone Zone { get; set; }
 
-        public int HousholdId {  get; set; }
+        public int HouseholdId {  get; set; }
         public Household Household { get; set; }
         public bool IsHead { get; set; }// to identify the head of house
         public bool IsActive { get; set; }

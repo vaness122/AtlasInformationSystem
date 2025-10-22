@@ -89,7 +89,7 @@ namespace Atlas.DAL.DbContext
             builder.Entity<Resident>()
             .HasOne(r => r.Household)
             .WithMany(h => h.Residents)
-            .HasForeignKey(r => r.HousholdId)
+            .HasForeignKey(r => r.HouseholdId)
             .OnDelete(DeleteBehavior.Restrict);
 
             // Household - Zone relationship

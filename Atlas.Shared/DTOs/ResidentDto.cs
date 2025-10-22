@@ -53,7 +53,7 @@ namespace Atlas.Shared.DTOs
             ZoneId = resident.ZoneId;
             MunicipalityId = resident.MunicipalityId;
             BarangayId = resident.BarangayId;
-            HousholdId = resident.HousholdId;
+            HousholdId = resident.HouseholdId;
 
             IsHead = resident.IsHead;
             IsActive = resident.IsActive;

@@ -104,7 +104,7 @@ namespace Atlas.DAL.Repositories
                 existingResident.Email = resident.Email;
                 existingResident.Address = resident.Address;
                 existingResident.ZoneId = resident.ZoneId;
-                existingResident.HousholdId = resident.HousholdId;
+                existingResident.HouseholdId = resident.HouseholdId;
                 existingResident.IsHead = resident.IsHead;
 
                 await _context.SaveChangesAsync();
@@ -119,7 +119,7 @@ namespace Atlas.DAL.Repositories
         public async Task<IEnumerable<Resident>> GetResidentsByHouseHoldIdAsync(int householdId)
         {
             return await _context.Residents
-                           .Where(r => r.HousholdId == householdId)
+                           .Where(r => r.HouseholdId == householdId)
                            .Include(r => r.Zone)
                            .Include(r => r.Household)
                            .ToListAsync();
