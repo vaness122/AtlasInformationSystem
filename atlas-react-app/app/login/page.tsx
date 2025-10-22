@@ -41,7 +41,7 @@ const IconEyeOff = () => (
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, logout } = useAuth(); // Ensure logout is available if needed
+  const { login, isAuthenticated, logout, userInfo } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -49,12 +49,27 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    // If user is already authenticated, redirect them to the dashboard
-    if (isAuthenticated) {
-      router.push("/dashboard");
+  // Function to determine redirect path based on user role
+  const getRedirectPath = (role: string) => {
+    switch (role?.toLowerCase()) {
+      case 'superadmin':
+        return '/superadmin/dashboard';
+      case 'municipalityadmin':
+        return '/municipalityadmin/dashboard';
+      case 'barangayadmin':
+        return '/barangayadmin/dashboard';
+      default:
+        return '/dashboard';
     }
-  }, [isAuthenticated, router]);
+  };
+
+  useEffect(() => {
+    // If user is already authenticated, redirect them to appropriate dashboard
+    if (isAuthenticated && userInfo) {
+      const redirectPath = getRedirectPath(userInfo.Role);
+      router.push(redirectPath);
+    }
+  }, [isAuthenticated, userInfo, router]);
 
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
@@ -92,10 +107,25 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (data.token) {
-          login(data.token); // This should set isAuthenticated to true in your context
+          // Extract user info from the response and pass to login function
+          const userData = {
+            userId: data.userId || data.user?.userId,
+            Email: data.email || data.user?.email,
+            Role: data.role || data.user?.role,
+            BarangayId: data.barangayId || data.user?.barangayId,
+            MunicipalityId: data.municipalityId || data.user?.municipalityId,
+            FirstName: data.firstName || data.user?.firstName
+          };
+          
+          login(data.token, userData);
           setMessage("Login successful! Redirecting...");
+          
+          // Determine redirect path based on user role
+          const userRole = userData.Role || data.role;
+          const redirectPath = getRedirectPath(userRole);
+          
           setTimeout(() => {
-            router.push("/dashboard");
+            router.push(redirectPath);
           }, 1000);
         } else {
           setMessage("Login failed: No token received.");
@@ -122,8 +152,14 @@ export default function LoginPage() {
         <h1 className="text-3xl font-extrabold mb-8 text-center text-gray-900">Atlas Login</h1>
 
         {isAuthenticated ? (
-          <div className="text-center text-green-600 font-medium">
-            You are already logged in.
+          <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center justify-center mb-2">
+              <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span className="text-green-700 font-semibold">Login Successful!</span>
+            </div>
+            <p className="text-green-600 text-sm">Redirecting to your dashboard...</p>
           </div>
         ) : (
           <form onSubmit={handleLogin} className="space-y-6" noValidate>
@@ -174,16 +210,16 @@ export default function LoginPage() {
             </div>
 
             {message && (
-              <p
-                className={`mt-4 text-center text-sm font-medium ${
-                  message.toLowerCase().includes("success") ||
-                  message.toLowerCase().includes("redirecting")
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {message}
-              </p>
+              <div className={`p-3 rounded-lg text-center ${
+                message.toLowerCase().includes("success") ||
+                message.toLowerCase().includes("redirecting")
+                  ? "bg-green-50 border border-green-200 text-green-700"
+                  : "bg-red-50 border border-red-200 text-red-700"
+              }`}>
+                <p className="text-sm font-medium">
+                  {message}
+                </p>
+              </div>
             )}
 
             <button
@@ -191,7 +227,15 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-[1.01] disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {loading ? "Logging In..." : "Log In"}
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Logging In...
+                </span>
+              ) : "Log In"}
             </button>
           </form>
         )}
