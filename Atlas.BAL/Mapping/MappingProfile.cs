@@ -34,7 +34,8 @@ namespace Atlas.BAL.Mapping
                    .ForMember(dest => dest.MunicipalityName, opt => opt.MapFrom(src => src.Municipality != null ? src.Municipality.Name : null))
                    .ForMember(dest => dest.BarangayName, opt => opt.MapFrom(src => src.Barangay != null ? src.Barangay.Name : null))
                    .ForMember(dest => dest.ZoneName, opt => opt.MapFrom(src => src.Zone != null ? src.Zone.Name : null))
-                   .ForMember(dest => dest.HouseholdName, opt => opt.MapFrom(src => src.Household != null ? src.Household.HouseHoldName : null));
+                   .ForMember(dest => dest.HouseholdName, opt => opt.MapFrom(src => src.Household != null ? src.Household.HouseHoldName : null))
+                   .ForMember(dest => dest.HouseholdId, opt => opt.MapFrom(src => src.HouseholdId)); // 
 
             CreateMap<ResidentDto, Resident>()
                 .ForMember(dest => dest.Municipality, opt => opt.Ignore())
@@ -42,8 +43,12 @@ namespace Atlas.BAL.Mapping
                 .ForMember(dest => dest.Zone, opt => opt.Ignore())
                 .ForMember(dest => dest.Household, opt => opt.Ignore());
 
-            CreateMap<CreateResidentDto, Resident>();
-            CreateMap<UpdateResidentDto, Resident>();
+
+            CreateMap<CreateResidentDto, Resident>()
+                .ForMember(dest => dest.HouseholdId, opt => opt.MapFrom(src => src.HouseholdId));
+
+            CreateMap<UpdateResidentDto, Resident>()
+                .ForMember(dest => dest.HouseholdId, opt => opt.MapFrom(src => src.HouseholdId));
         }
     }
 }

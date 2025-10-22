@@ -23,7 +23,7 @@ namespace Atlas.Shared.DTOs
         public int ZoneId { get; set; }
         public int MunicipalityId { get; set; }
         public int BarangayId { get; set; }
-        public int HousholdId { get; set; }
+      
 
         public bool IsHead { get; set; }
         public bool IsActive { get; set; }
@@ -32,6 +32,7 @@ namespace Atlas.Shared.DTOs
         public string? BarangayName { get; set; }
         public string? ZoneName { get; set; }
         public string? HouseholdName { get; set; }
+        public object HouseholdId { get; set; }
 
         public ResidentDto() { }
 
@@ -53,7 +54,7 @@ namespace Atlas.Shared.DTOs
             ZoneId = resident.ZoneId;
             MunicipalityId = resident.MunicipalityId;
             BarangayId = resident.BarangayId;
-            HousholdId = resident.HouseholdId;
+            HouseholdId = resident.HouseholdId;
 
             IsHead = resident.IsHead;
             IsActive = resident.IsActive;
