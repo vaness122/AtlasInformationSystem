@@ -142,6 +142,11 @@ namespace Atlas.DAL.DbContext
 
                 );
 
+           
+                
+                
+               
+
             builder.Entity<Barangay>().HasData(
         new Barangay
         {

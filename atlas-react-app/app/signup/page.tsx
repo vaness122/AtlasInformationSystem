@@ -391,25 +391,7 @@ export default function RegisterPage() {
             </select>
           )}
 
-          {/* Barangay select (only for Municipality Admin or Barangay Admin) */}
-          {(formData.role === 1 || formData.role === 2) && (
-            <select
-              name="barangayId"
-              value={formData.barangayId ?? ''}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded"
-              required
-              disabled={!formData.municipalityId}
-            >
-              <option value="">Select Barangay</option>
-              {barangays.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          )}
-
+          
           {/* Zone select (only for Barangay Admin) */}
           {formData.role === 2 && (
             <select

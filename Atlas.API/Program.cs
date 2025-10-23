@@ -78,6 +78,7 @@ builder.Services.AddTransient<IHouseholdRepository, HouseholdRepository>();
 builder.Services.AddTransient<IBarangayRepository, BarangayRepository>();
 builder.Services.AddTransient<IMunicipalityRepository, MunicipalityRepository>();
 builder.Services.AddTransient<IZoneRepository, ZoneRepository>();
+builder.Services.AddTransient<ISuperAdminRepository, SuperAdminRepository>();
 
 // Register application services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -86,6 +87,7 @@ builder.Services.AddScoped<IBarangayService ,  BarangayService>();
 builder.Services.AddScoped<IZoneService , ZoneService>();
 builder.Services.AddScoped<IBarangayAdminService , BarangayAdminService>();
 builder.Services.AddScoped<IMunicipalityAdminService , MunicipalityAdminService>();
+builder.Services.AddScoped<ISuperAdmin ,  SuperAdminService>();
 
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(sp =>
 {
