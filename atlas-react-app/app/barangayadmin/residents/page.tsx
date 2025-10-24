@@ -18,7 +18,7 @@ interface Resident {
   zoneId: number;
   municipalityId: number;
   barangayId: number;
-  housholdId: number;
+  householdId: number;
   household?: string;
   zone?: string;
   isHead: boolean;
@@ -44,14 +44,17 @@ interface Household {
   residents: Resident[];
   zoneId: number;
   zone?: string;
+  zoneName?: string;
+  residentCount?: number;
 }
 
 export default function ResidentsPage() {
-  const { token, logout, isAuthenticated, loading } = useAuth();
+  const { token, logout, isAuthenticated, loading, userInfo } = useAuth();
   const [residents, setResidents] = useState<Resident[]>([]);
   const [households, setHouseholds] = useState<Household[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedHousehold, setSelectedHousehold] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -60,7 +63,7 @@ export default function ResidentsPage() {
   const [selectedResident, setSelectedResident] = useState<Resident | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Form state
+  // Form states
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -81,15 +84,38 @@ export default function ResidentsPage() {
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
-    fetchHouseholds();
+    fetchData();
   }, [token, isAuthenticated]);
 
-  const fetchHouseholds = async () => {
+  // Auto-hide success messages after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  const fetchData = async () => {
     setLoadingData(true);
     setError(null);
     
     try {
-      const res = await fetch("https://localhost:44336/api/Residents/household", {
+      // Fetch households first, then residents
+      await fetchHouseholds();
+      await fetchResidents();
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to load data");
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const fetchHouseholds = async () => {
+    try {
+      const res = await fetch("https://localhost:44336/api/barangay-admin/households", {
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -101,94 +127,149 @@ export default function ResidentsPage() {
         const householdsData = await res.json();
         console.log("Households API Response:", householdsData);
         setHouseholds(householdsData);
-        
-        // Extract all residents from all households
-        const allResidents: Resident[] = householdsData.flatMap((household: Household) => 
-          household.residents.map(resident => ({
-            ...resident,
-            // Add household information to each resident
-            housholdId: household.id,
-            household: household.houseHoldName,
-            zone: household.zone
-          }))
-        );
-        setResidents(allResidents);
       } else {
         console.error("Failed to fetch households data");
-        setError("Failed to load residents data");
         setHouseholds([]);
-        setResidents([]);
       }
     } catch (err) {
       console.error("Error fetching households:", err);
-      setError("Failed to load residents data");
       setHouseholds([]);
-      setResidents([]);
-    } finally {
-      setLoadingData(false);
     }
   };
 
-  const filteredResidents = residents.filter(resident => {
-    const fullName = `${resident.firstName} ${resident.lastName} ${resident.middleName}`.toLowerCase();
-    const matchesSearch = 
-      fullName.includes(searchTerm.toLowerCase()) ||
-      resident.occupation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      resident.address?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesHousehold = selectedHousehold === "all" || resident.housholdId?.toString() === selectedHousehold;
-    const matchesStatus = selectedStatus === "all" || 
-      (selectedStatus === "active" && resident.isActive) ||
-      (selectedStatus === "inactive" && !resident.isActive);
-    
-    return matchesSearch && matchesHousehold && matchesStatus;
-  });
+  const fetchResidents = async () => {
+    try {
+      const res = await fetch("https://localhost:44336/api/barangay-admin/residents", {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+      });
+
+      if (res.ok) {
+        const residentsData = await res.json();
+        console.log("Residents API Response:", residentsData);
+        
+        // Map residents with household information using current households state
+        const residentsWithHouseholdInfo = residentsData.map((resident: Resident) => {
+          const household = households.find(h => h.id === resident.householdId);
+          return {
+            ...resident,
+            household: household?.houseHoldName,
+            zone: household?.zoneName || household?.zone || `Zone ${household?.zoneId || resident.zoneId}`
+          };
+        });
+        
+        setResidents(residentsWithHouseholdInfo);
+      } else {
+        console.error("Failed to fetch residents data");
+        setError("Failed to load residents data");
+        setResidents([]);
+      }
+    } catch (err) {
+      console.error("Error fetching residents:", err);
+      setError("Failed to load residents data");
+      setResidents([]);
+    }
+  };
+
+  // Refresh residents when households change to ensure proper household info
+  useEffect(() => {
+    if (households.length > 0 && residents.length > 0) {
+      const residentsWithHouseholdInfo = residents.map(resident => {
+        const household = households.find(h => h.id === resident.householdId);
+        return {
+          ...resident,
+          household: household?.houseHoldName,
+          zone: household?.zoneName || household?.zone || `Zone ${household?.zoneId || resident.zoneId}`
+        };
+      });
+      setResidents(residentsWithHouseholdInfo);
+    }
+  }, [households]);
+
+  // Calculate statistics - FIXED VERSION
+  const totalResidents = residents.length;
+  const activeResidents = residents.filter(r => r.isActive === true).length;
+  const householdHeads = residents.filter(r => r.isHead === true).length;
+  const totalHouseholds = households.length;
 
   const handleAddResident = async (e: React.FormEvent) => {
     e.preventDefault();
     setActionLoading(true);
+    setError(null);
     
     try {
-      // API call to add resident
-      const res = await fetch("https://localhost:44336/api/Residents", {
+      // Validate required fields
+      if (!formData.firstName || !formData.lastName || !formData.householdId) {
+        setError("Please fill in all required fields (First Name, Last Name, and Household)");
+        setActionLoading(false);
+        return;
+      }
+
+      // Get selected household to get zone info
+      const selectedHousehold = households.find(h => h.id === parseInt(formData.householdId));
+      
+      // Prepare resident data according to API schema
+      const residentData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        middleName: formData.middleName || "",
+        gender: formData.gender || "",
+        occupation: formData.occupation || "",
+        birthdate: formData.birthdate ? new Date(formData.birthdate).toISOString() : null,
+        civilStatus: formData.civilStatus || "",
+        email: formData.email || "",
+        address: formData.address || "",
+        isHead: formData.isHead,
+        isActive: formData.isActive,
+        householdId: parseInt(formData.householdId),
+        zoneId: selectedHousehold?.zoneId || 1,
+        barangayId: userInfo?.BarangayId ? parseInt(userInfo.BarangayId) : 1,
+        municipalityId: userInfo?.MunicipalityId ? parseInt(userInfo.MunicipalityId) : 1
+      };
+
+      console.log("Sending resident data:", residentData);
+
+      // API call to add resident using barangay-admin endpoint
+      const res = await fetch("https://localhost:44336/api/barangay-admin/residents", {
         method: "POST",
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          middleName: formData.middleName,
-          gender: formData.gender,
-          occupation: formData.occupation,
-          birthdate: formData.birthdate || null,
-          civilStatus: formData.civilStatus,
-          email: formData.email,
-          address: formData.address,
-          isHead: formData.isHead,
-          isActive: formData.isActive,
-          housholdId: formData.householdId ? parseInt(formData.householdId) : 0,
-          zoneId: formData.zoneId ? parseInt(formData.zoneId) : 0,
-          barangayId: formData.barangayId ? parseInt(formData.barangayId) : 0,
-          municipalityId: formData.municipalityId ? parseInt(formData.municipalityId) : 0
-        })
+        body: JSON.stringify(residentData)
       });
 
       if (res.ok) {
         const newResident = await res.json();
-        setResidents(prev => [...prev, newResident]);
+        console.log("New resident response:", newResident);
+        
+        setSuccess(`Resident "${newResident.firstName} ${newResident.lastName}" added successfully!`);
+        
+        // Add household info to the new resident and add to state
+        const household = households.find(h => h.id === newResident.householdId);
+        const residentWithHouseholdInfo = {
+          ...newResident,
+          household: household?.houseHoldName,
+          zone: household?.zoneName || household?.zone || `Zone ${household?.zoneId || newResident.zoneId}`
+        };
+        
+        setResidents(prev => [...prev, residentWithHouseholdInfo]);
         setShowAddModal(false);
         resetForm();
-        // Refresh households data to get updated resident lists
+        // Refresh households data to update resident counts
         fetchHouseholds();
       } else {
-        throw new Error("Failed to add resident");
+        const errorText = await res.text();
+        console.error("API Error Response:", errorText);
+        throw new Error(`Failed to add resident: ${res.status} ${errorText}`);
       }
     } catch (err) {
       console.error("Error adding resident:", err);
-      setError("Failed to add resident");
+      setError("Failed to add resident: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setActionLoading(false);
     }
@@ -199,52 +280,79 @@ export default function ResidentsPage() {
     if (!selectedResident) return;
     
     setActionLoading(true);
+    setError(null);
     
     try {
-      // API call to update resident
-      const res = await fetch(`https://localhost:44336/api/Residents/${selectedResident.id}`, {
+      // Validate required fields
+      if (!formData.firstName || !formData.lastName || !formData.householdId) {
+        setError("Please fill in all required fields (First Name, Last Name, and Household)");
+        setActionLoading(false);
+        return;
+      }
+
+      // Get selected household to get zone info
+      const selectedHousehold = households.find(h => h.id === parseInt(formData.householdId));
+      
+      // Prepare resident data according to API schema - FIXED VERSION
+      const residentData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        middleName: formData.middleName || "",
+        gender: formData.gender || "",
+        occupation: formData.occupation || "",
+        birthdate: formData.birthdate ? new Date(formData.birthdate).toISOString() : null,
+        civilStatus: formData.civilStatus || "",
+        email: formData.email || "",
+        address: formData.address || "",
+        isHead: formData.isHead,
+        isActive: formData.isActive,
+        householdId: parseInt(formData.householdId),
+        zoneId: selectedHousehold?.zoneId || selectedResident.zoneId,
+        barangayId: userInfo?.BarangayId ? parseInt(userInfo.BarangayId) : selectedResident.barangayId,
+        municipalityId: userInfo?.MunicipalityId ? parseInt(userInfo.MunicipalityId) : selectedResident.municipalityId
+      };
+
+      console.log("Updating resident data:", residentData);
+
+      const res = await fetch(`https://localhost:44336/api/barangay-admin/residents/${selectedResident.id}`, {
         method: "PUT",
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({
-          id: selectedResident.id,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          middleName: formData.middleName,
-          gender: formData.gender,
-          occupation: formData.occupation,
-          birthdate: formData.birthdate || null,
-          civilStatus: formData.civilStatus,
-          email: formData.email,
-          address: formData.address,
-          isHead: formData.isHead,
-          isActive: formData.isActive,
-          housholdId: formData.householdId ? parseInt(formData.householdId) : 0,
-          zoneId: formData.zoneId ? parseInt(formData.zoneId) : 0,
-          barangayId: formData.barangayId ? parseInt(formData.barangayId) : 0,
-          municipalityId: formData.municipalityId ? parseInt(formData.municipalityId) : 0
-        })
+        body: JSON.stringify(residentData)
       });
 
       if (res.ok) {
         const updatedResident = await res.json();
+        console.log("Updated resident response:", updatedResident);
+        
+        setSuccess(`Resident "${updatedResident.firstName} ${updatedResident.lastName}" updated successfully!`);
+        
+        // Add household info to the updated resident
+        const household = households.find(h => h.id === updatedResident.householdId);
+        const residentWithHouseholdInfo = {
+          ...updatedResident,
+          household: household?.houseHoldName,
+          zone: household?.zoneName || household?.zone || `Zone ${household?.zoneId || updatedResident.zoneId}`
+        };
+        
         setResidents(prev => prev.map(resident => 
-          resident.id === selectedResident.id ? updatedResident : resident
+          resident.id === selectedResident.id ? residentWithHouseholdInfo : resident
         ));
         setShowEditModal(false);
         setSelectedResident(null);
         resetForm();
-        // Refresh households data to get updated resident lists
         fetchHouseholds();
       } else {
-        throw new Error("Failed to update resident");
+        const errorText = await res.text();
+        console.error("API Error Response:", errorText);
+        throw new Error(`Failed to update resident: ${res.status} ${errorText}`);
       }
     } catch (err) {
       console.error("Error updating resident:", err);
-      setError("Failed to update resident");
+      setError("Failed to update resident: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setActionLoading(false);
     }
@@ -254,9 +362,10 @@ export default function ResidentsPage() {
     if (!confirm("Are you sure you want to delete this resident?")) return;
     
     setActionLoading(true);
+    setError(null);
     
     try {
-      const res = await fetch(`https://localhost:44336/api/Residents/${id}`, {
+      const res = await fetch(`https://localhost:44336/api/barangay-admin/residents/${id}`, {
         method: "DELETE",
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -266,15 +375,17 @@ export default function ResidentsPage() {
       });
 
       if (res.ok) {
+        const deletedResident = residents.find(r => r.id === id);
+        setSuccess(`Resident "${deletedResident?.firstName} ${deletedResident?.lastName}" deleted successfully!`);
         setResidents(prev => prev.filter(resident => resident.id !== id));
-        // Refresh households data to get updated resident lists
         fetchHouseholds();
       } else {
-        throw new Error("Failed to delete resident");
+        const errorText = await res.text();
+        throw new Error(`Failed to delete resident: ${res.status} ${errorText}`);
       }
     } catch (err) {
       console.error("Error deleting resident:", err);
-      setError("Failed to delete resident");
+      setError("Failed to delete resident: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setActionLoading(false);
     }
@@ -305,16 +416,16 @@ export default function ResidentsPage() {
     setFormData({
       firstName: resident.firstName,
       lastName: resident.lastName,
-      middleName: resident.middleName,
+      middleName: resident.middleName || "",
       gender: resident.gender || "",
       occupation: resident.occupation || "",
-      birthdate: resident.birthdate || "",
+      birthdate: resident.birthdate ? resident.birthdate.split('T')[0] : "", // Format date for input
       civilStatus: resident.civilStatus || "",
       email: resident.email || "",
       address: resident.address || "",
       isHead: resident.isHead,
       isActive: resident.isActive,
-      householdId: resident.housholdId?.toString() || "",
+      householdId: resident.householdId?.toString() || "",
       zoneId: resident.zoneId?.toString() || "",
       barangayId: resident.barangayId?.toString() || "",
       municipalityId: resident.municipalityId?.toString() || ""
@@ -322,34 +433,37 @@ export default function ResidentsPage() {
     setShowEditModal(true);
   };
 
-  // Get household info for display
-  const getHouseholdInfo = (resident: Resident) => {
-    if (resident.household) {
-      return resident.household;
-    }
+  const filteredResidents = residents.filter(resident => {
+    const fullName = `${resident.firstName} ${resident.lastName} ${resident.middleName}`.toLowerCase();
+    const matchesSearch = 
+      fullName.includes(searchTerm.toLowerCase()) ||
+      resident.occupation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      resident.address?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const household = households.find(h => h.id === resident.housholdId);
+    const matchesHousehold = selectedHousehold === "all" || resident.householdId?.toString() === selectedHousehold;
+    const matchesStatus = selectedStatus === "all" || 
+      (selectedStatus === "active" && resident.isActive) ||
+      (selectedStatus === "inactive" && !resident.isActive);
+    
+    return matchesSearch && matchesHousehold && matchesStatus;
+  });
+
+  // Helper functions for display
+  const getHouseholdInfo = (resident: Resident) => {
+    if (resident.household) return resident.household;
+    const household = households.find(h => h.id === resident.householdId);
     return household ? household.houseHoldName : "No household assigned";
   };
 
-  // Get address for display
-  const getAddress = (resident: Resident) => {
-    if (resident.address) {
-      return resident.address;
-    }
-    
-    const household = households.find(h => h.id === resident.housholdId);
-    return household?.zone || resident.zone || "No address";
+  const getZoneInfo = (resident: Resident) => {
+    if (resident.zone) return resident.zone;
+    const household = households.find(h => h.id === resident.householdId);
+    return household?.zoneName || household?.zone || `Zone ${household?.zoneId || resident.zoneId}` || "No zone";
   };
 
-  // Get zone info for display
-  const getZoneInfo = (resident: Resident) => {
-    if (resident.zone) {
-      return resident.zone;
-    }
-    
-    const household = households.find(h => h.id === resident.housholdId);
-    return household?.zone || "No zone";
+  // Refresh data when needed
+  const refreshData = () => {
+    fetchData();
   };
 
   if (loading) {
@@ -470,16 +584,17 @@ export default function ResidentsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Household</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Household *</label>
                   <select
                     value={formData.householdId}
                     onChange={(e) => setFormData(prev => ({ ...prev, householdId: e.target.value }))}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Household</option>
                     {households.map(household => (
                       <option key={household.id} value={household.id}>
-                        {household.houseHoldName} - {household.zone || `Zone ${household.zoneId}`}
+                        {household.houseHoldName} - {household.zoneName || household.zone || `Zone ${household.zoneId}`}
                       </option>
                     ))}
                   </select>
@@ -638,16 +753,17 @@ export default function ResidentsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Household</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Household *</label>
                   <select
                     value={formData.householdId}
                     onChange={(e) => setFormData(prev => ({ ...prev, householdId: e.target.value }))}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Household</option>
                     {households.map(household => (
                       <option key={household.id} value={household.id}>
-                        {household.houseHoldName} - {household.zone || `Zone ${household.zoneId}`}
+                        {household.houseHoldName} - {household.zoneName || household.zone || `Zone ${household.zoneId}`}
                       </option>
                     ))}
                   </select>
@@ -791,6 +907,32 @@ export default function ResidentsPage() {
             <p className="text-gray-600 mt-2">Manage and view all residents in your barangay.</p>
           </div>
 
+          {/* Success Message */}
+          {success && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 animate-fade-in">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-green-800">
+                    <strong>Success:</strong> {success}
+                  </h3>
+                </div>
+                <button 
+                  onClick={() => setSuccess(null)}
+                  className="ml-auto text-green-400 hover:text-green-600"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -820,7 +962,7 @@ export default function ResidentsPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Residents</p>
-                  <p className="text-2xl font-bold text-gray-900">{residents.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalResidents}</p>
                 </div>
               </div>
             </div>
@@ -834,14 +976,12 @@ export default function ResidentsPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Active Residents</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {residents.filter(r => r.isActive).length}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{activeResidents}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadowSm border border-gray-200 p-6">
               <div className="flex items-center">
                 <div className="bg-orange-100 p-3 rounded-lg">
                   <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -850,14 +990,12 @@ export default function ResidentsPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Household Heads</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {residents.filter(r => r.isHead).length}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{householdHeads}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadowSm border border-gray-200 p-6">
               <div className="flex items-center">
                 <div className="bg-purple-100 p-3 rounded-lg">
                   <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -866,14 +1004,14 @@ export default function ResidentsPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Households</p>
-                  <p className="text-2xl font-bold text-gray-900">{households.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalHouseholds}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Search and Filter Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="bg-white rounded-lg shadowSm border border-gray-200 p-6 mb-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex flex-col sm:flex-row gap-4 flex-1">
                 <div className="flex-1">
@@ -923,8 +1061,11 @@ export default function ResidentsPage() {
                 >
                   Add New Resident
                 </button>
-                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  Export Data
+                <button 
+                  onClick={refreshData}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Refresh
                 </button>
               </div>
             </div>
@@ -932,14 +1073,14 @@ export default function ResidentsPage() {
 
           {/* Residents List */}
           {loadingData ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <div className="bg-white rounded-lg shadowSm border border-gray-200 p-8 text-center">
               <div className="flex justify-center items-center space-x-2">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 <p className="text-gray-600">Loading residents data...</p>
               </div>
             </div>
           ) : filteredResidents.length > 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-lg shadowSm border border-gray-200 overflow-hidden">
               <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">All Residents ({filteredResidents.length})</h2>
               </div>
@@ -1029,7 +1170,7 @@ export default function ResidentsPage() {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <div className="bg-white rounded-lg shadowSm border border-gray-200 p-8 text-center">
               <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
@@ -1040,12 +1181,20 @@ export default function ResidentsPage() {
                   : 'No residents data available.'
                 }
               </p>
-              <button 
-                onClick={() => setShowAddModal(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                Add Your First Resident
-              </button>
+              <div className="flex space-x-3 justify-center">
+                <button 
+                  onClick={() => setShowAddModal(true)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Add Your First Resident
+                </button>
+                <button 
+                  onClick={refreshData}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Refresh Data
+                </button>
+              </div>
             </div>
           )}
         </div>

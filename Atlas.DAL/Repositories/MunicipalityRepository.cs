@@ -18,7 +18,7 @@ namespace Atlas.DAL.Repositories
 
         public async Task<IEnumerable<Municipality>> GetAllAsync()
         {
-            return await _context.Municipalities.ToListAsync();  
+            return await _context.Municipalities.ToListAsync();
         }
 
         public async Task<Municipality> GetByIdAsync(int id)

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext"; // Fixed import path
+import { useAuth } from "../../context/AuthContext";
 import Link from "next/link";
 
 interface UserInfo {
@@ -13,18 +13,29 @@ interface UserInfo {
   FirstName?: string;
 }
 
+interface ZoneStatistic {
+  zoneId: number;
+  zoneName: string;
+  householdCount: number;
+  residentCount: number;
+}
+
 interface BarangayStats {
+  barangayId: number;
+  barangayName: string;
+  totalZones: number;
   totalHouseholds: number;
   totalResidents: number;
-  activeZones: number;
-  recentActivities: any[];
+  averageHouseholdSize: number;
+  activeResidents: number;
+  householdHeads: number;
+  zoneStatistics: ZoneStatistic[];
 }
 
 export default function BarangayDashboardPage() {
   const { token, logout, isAuthenticated, loading, userInfo } = useAuth();
   const [stats, setStats] = useState<BarangayStats | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fetchLoading, setFetchLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -36,8 +47,9 @@ export default function BarangayDashboardPage() {
 
   const fetchBarangayStats = async () => {
     setStatsLoading(true);
+    setError(null);
     try {
-      const res = await fetch("https://localhost:44336/api/barangay/stats", {
+      const res = await fetch("https://localhost:44336/api/barangay-admin/statistics", {
         headers: { 
           Authorization: `Bearer ${token}`,
         },
@@ -47,22 +59,23 @@ export default function BarangayDashboardPage() {
         const data = await res.json();
         setStats(data);
       } else {
-        // Fallback to sample data if API fails
-        setStats({
-          totalHouseholds: 156,
-          totalResidents: 642,
-          activeZones: 8,
-          recentActivities: []
-        });
+        const errorText = await res.text();
+        throw new Error(`Failed to fetch statistics: ${res.status} ${errorText}`);
       }
     } catch (error) {
       console.error("Error fetching stats:", error);
-      // Fallback to sample data
+      setError(error instanceof Error ? error.message : "Failed to load statistics");
+      // Fallback to sample data if API fails
       setStats({
+        barangayId: 1,
+        barangayName: "Sample Barangay",
+        totalZones: 8,
         totalHouseholds: 156,
         totalResidents: 642,
-        activeZones: 8,
-        recentActivities: []
+        averageHouseholdSize: 4.12,
+        activeResidents: 600,
+        householdHeads: 156,
+        zoneStatistics: []
       });
     } finally {
       setStatsLoading(false);
@@ -87,6 +100,7 @@ export default function BarangayDashboardPage() {
         const result = e.target?.result as string;
         setProfileImage(result);
         setShowUploadModal(false);
+        setError(null);
       };
       reader.readAsDataURL(file);
     }
@@ -371,14 +385,89 @@ export default function BarangayDashboardPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Zones</p>
+                  <p className="text-sm font-medium text-gray-600">Total Zones</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {statsLoading ? "..." : stats?.activeZones || 0}
+                    {statsLoading ? "..." : stats?.totalZones || 0}
                   </p>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Additional Statistics */}
+          {stats && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="bg-orange-100 p-3 rounded-lg">
+                    <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Active Residents</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.activeResidents}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="bg-indigo-100 p-3 rounded-lg">
+                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Household Heads</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.householdHeads}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="bg-teal-100 p-3 rounded-lg">
+                    <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Avg. Household Size</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.averageHouseholdSize.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Zone Statistics */}
+          {stats?.zoneStatistics && stats.zoneStatistics.length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">Zone Statistics</h2>
+              </div>
+              <div className="p-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {stats.zoneStatistics.map((zone) => (
+                    <div key={zone.zoneId} className="border border-gray-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-gray-900 mb-2">{zone.zoneName}</h3>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-gray-600">Households</p>
+                          <p className="font-semibold">{zone.householdCount}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Residents</p>
+                          <p className="font-semibold">{zone.residentCount}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
