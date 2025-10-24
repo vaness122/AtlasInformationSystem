@@ -4,12 +4,20 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Link from "next/link";
 
+interface Zone {
+  id: number;
+  name: string;
+  description: string;
+  barangayId: number;
+  barangayName: string | null;
+}
+
 interface Household {
   id: number;
   houseHoldName: string;
-  residents: any[];
   zoneId: number;
-  zone: string;
+  zoneName?: string;
+  residentCount?: number;
 }
 
 interface Resident {
@@ -17,34 +25,43 @@ interface Resident {
   firstName: string;
   lastName: string;
   middleName: string;
+  birthdate?: string;
+  gender?: string;
+  civilStatus?: string;
+  occupation?: string;
+  email?: string;
+  address?: string;
+  zoneId: number;
+  municipalityId: number;
+  barangayId: number;
+  householdId: number;
   isHead: boolean;
   isActive: boolean;
-}
-
-interface Zone {
-  id: number;
-  name: string;
-  desciption: string;
-  barangayId: number;
-  barangay: any;
-  households: Household[];
-  residents: Resident[];
+  municipalityName?: string;
+  barangayName?: string;
+  zoneName?: string;
+  householdName?: string;
 }
 
 export default function ZonesPage() {
   const { token, logout, isAuthenticated, loading } = useAuth();
   const [zones, setZones] = useState<Zone[]>([]);
+  const [households, setHouseholds] = useState<Household[]>([]);
+  const [residents, setResidents] = useState<Resident[]>([]);
   const [zonesLoading, setZonesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
-  const [showZoneModal, setShowZoneModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
+  const [showResidentsModal, setShowResidentsModal] = useState(false);
+  const [zoneResidents, setZoneResidents] = useState<Resident[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
 
     fetchZones();
+    fetchHouseholds();
+    fetchResidents();
   }, [token, isAuthenticated]);
 
   const fetchZones = async () => {
@@ -52,7 +69,7 @@ export default function ZonesPage() {
     setError(null);
     
     try {
-      const res = await fetch("https://localhost:44336/api/Residents/zone", {
+      const res = await fetch("https://localhost:44336/api/barangay-admin/zones", {
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -62,112 +79,175 @@ export default function ZonesPage() {
 
       if (res.ok) {
         const zonesData = await res.json();
-        console.log("API Response:", zonesData);
+        console.log("Zones API Response:", zonesData);
         setZones(zonesData);
       } else {
-        console.error("Failed to fetch zones, using sample data");
-        // Use sample data if API fails
-        setZones([
-          { 
-            id: 1, 
-            name: "Zone 1", 
-            desciption: "Central zone of Adcadarao",
-            barangayId: 1,
-            barangay: null,
-            households: [
-              { id: 1, houseHoldName: "Household 1", residents: [{}, {}, {}], zoneId: 1, zone: "Zone 1" },
-              { id: 2, houseHoldName: "Household 2", residents: [{}], zoneId: 1, zone: "Zone 1" }
-            ],
-            residents: []
-          },
-          { 
-            id: 2, 
-            name: "Zone 2", 
-            desciption: "Northern zone of Adcadarao",
-            barangayId: 1,
-            barangay: null,
-            households: [
-              { id: 3, houseHoldName: "Household 3", residents: [{}, {}], zoneId: 2, zone: "Zone 2" }
-            ],
-            residents: []
-          }
-        ]);
+        console.error("Failed to fetch zones");
+        setError("Failed to load zones data");
       }
     } catch (err) {
       console.error("Error fetching zones:", err);
       setError("Failed to load zones data");
-      // Use sample data as fallback
-      setZones([
-        { 
-          id: 1, 
-          name: "Zone 1", 
-          desciption: "Central zone of Adcadarao",
-          barangayId: 1,
-          barangay: null,
-          households: [
-            { id: 1, houseHoldName: "Household 1", residents: [{}, {}, {}], zoneId: 1, zone: "Zone 1" },
-            { id: 2, houseHoldName: "Household 2", residents: [{}], zoneId: 1, zone: "Zone 1" }
-          ],
-          residents: []
-        },
-        { 
-          id: 2, 
-          name: "Zone 2", 
-          desciption: "Northern zone of Adcadarao",
-          barangayId: 1,
-          barangay: null,
-          households: [
-            { id: 3, houseHoldName: "Household 3", residents: [{}, {}], zoneId: 2, zone: "Zone 2" }
-          ],
-          residents: []
-        }
-      ]);
     } finally {
       setZonesLoading(false);
     }
   };
 
-  const filteredZones = zones.filter(zone => 
-    zone.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    zone.desciption?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const fetchHouseholds = async () => {
+    try {
+      const res = await fetch("https://localhost:44336/api/barangay-admin/households", {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+      });
 
-  // Calculate household count from the actual households array
-  const calculateHouseholdCount = (zone: Zone): number => {
-    return zone.households ? zone.households.length : 0;
+      if (res.ok) {
+        const householdsData = await res.json();
+        console.log("Households API Response:", householdsData);
+        setHouseholds(householdsData);
+      } else {
+        console.error("Failed to fetch households data");
+      }
+    } catch (err) {
+      console.error("Error fetching households:", err);
+    }
   };
 
-  // Calculate total residents count
-  const calculateTotalResidents = (zone: Zone): number => {
-    if (!zone.households) return 0;
-    return zone.households.reduce((total, household) => {
-      return total + (household.residents ? household.residents.length : 0);
-    }, 0);
+  const fetchResidents = async () => {
+    try {
+      const res = await fetch("https://localhost:44336/api/barangay-admin/residents", {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+      });
+
+      if (res.ok) {
+        const residentsData = await res.json();
+        console.log("Residents API Response:", residentsData);
+        setResidents(residentsData);
+      } else {
+        console.error("Failed to fetch residents data");
+      }
+    } catch (err) {
+      console.error("Error fetching residents:", err);
+    }
+  };
+
+  const filteredZones = zones.filter(zone => 
+    zone.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    zone.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Calculate household count for a zone
+  const calculateHouseholdCount = (zoneId: number): number => {
+    return households.filter(household => household.zoneId === zoneId).length;
+  };
+
+  // Calculate total residents count for a zone
+  const calculateTotalResidents = (zoneId: number): number => {
+    const zoneHouseholds = households.filter(household => household.zoneId === zoneId);
+    const zoneHouseholdIds = zoneHouseholds.map(household => household.id);
+    return residents.filter(resident => 
+      zoneHouseholdIds.includes(resident.householdId) && resident.isActive
+    ).length;
+  };
+
+  // Get residents for a specific zone
+  const getZoneResidents = (zoneId: number): Resident[] => {
+    const zoneHouseholds = households.filter(household => household.zoneId === zoneId);
+    const zoneHouseholdIds = zoneHouseholds.map(household => household.id);
+    return residents.filter(resident => 
+      zoneHouseholdIds.includes(resident.householdId) && resident.isActive
+    );
   };
 
   // Calculate total households across all zones
-  const totalHouseholds = zones.reduce((total, zone) => {
-    return total + calculateHouseholdCount(zone);
-  }, 0);
+  const totalHouseholds = households.length;
 
   // Calculate total residents across all zones
-  const totalResidents = zones.reduce((total, zone) => {
-    return total + calculateTotalResidents(zone);
-  }, 0);
+  const totalResidents = residents.filter(resident => resident.isActive).length;
 
   // Sort zones by household count
   const sortedZones = [...filteredZones].sort((a, b) => {
-    const countA = calculateHouseholdCount(a);
-    const countB = calculateHouseholdCount(b);
+    const countA = calculateHouseholdCount(a.id);
+    const countB = calculateHouseholdCount(b.id);
     return countB - countA;
   });
 
   const mostPopulated = sortedZones.length > 0 ? sortedZones[0] : null;
-  const leastPopulated = sortedZones.length > 0 ? sortedZones[sortedZones.length - 1] : null;
 
-  const handleViewZone = (zone: Zone) => {
+  const handleViewResidents = (zone: Zone) => {
     setSelectedZone(zone);
-    setShowZoneModal(true);
+    const zoneResidentsData = getZoneResidents(zone.id);
+    setZoneResidents(zoneResidentsData);
+    setShowResidentsModal(true);
+  };
+
+  const handleEditZone = (zone: Zone) => {
+    // Implement edit functionality
+    console.log("Edit zone:", zone);
+  };
+
+  const handleDeleteZone = async (zoneId: number) => {
+    if (!confirm("Are you sure you want to delete this zone? This action cannot be undone.")) return;
+    
+    setActionLoading(true);
+    setError(null);
+    
+    try {
+      const res = await fetch(`https://localhost:44336/api/barangay-admin/zones/${zoneId}`, {
+        method: "DELETE",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+      });
+
+      if (res.ok) {
+        setZones(prev => prev.filter(zone => zone.id !== zoneId));
+        // Refresh households and residents data
+        fetchHouseholds();
+        fetchResidents();
+      } else {
+        const errorText = await res.text();
+        throw new Error(`Failed to delete zone: ${res.status} ${errorText}`);
+      }
+    } catch (err) {
+      console.error("Error deleting zone:", err);
+      setError("Failed to delete zone: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Format date for display
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Not specified";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Calculate age from birthdate
+  const calculateAge = (birthdate?: string) => {
+    if (!birthdate) return "Unknown";
+    const today = new Date();
+    const birthDate = new Date(birthdate);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
   };
 
   if (loading) {
@@ -195,14 +275,16 @@ export default function ZonesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Zone Details Modal */}
-      {showZoneModal && selectedZone && (
+      {/* Residents Details Modal */}
+      {showResidentsModal && selectedZone && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{selectedZone.name} Details</h3>
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 bg-white">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Residents in {selectedZone.name}
+              </h3>
               <button 
-                onClick={() => setShowZoneModal(false)}
+                onClick={() => setShowResidentsModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,38 +293,134 @@ export default function ZonesPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Zone Name</label>
-                  <p className="text-gray-900 font-semibold">{selectedZone.name}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Households</label>
-                  <p className="text-gray-900 font-semibold">{calculateHouseholdCount(selectedZone)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Total Residents</label>
-                  <p className="text-gray-900 font-semibold">{calculateTotalResidents(selectedZone)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Description</label>
-                  <p className="text-gray-900">{selectedZone.desciption || "Not specified"}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-gray-500">Barangay ID</label>
-                  <p className="text-gray-900">{selectedZone.barangayId || "Not assigned"}</p>
+            <div className="p-6">
+              <div className="mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="font-medium text-blue-900">Total Residents</p>
+                    <p className="text-2xl font-bold text-blue-700">{zoneResidents.length}</p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="font-medium text-green-900">Household Heads</p>
+                    <p className="text-2xl font-bold text-green-700">
+                      {zoneResidents.filter(r => r.isHead).length}
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <p className="font-medium text-purple-900">Male Residents</p>
+                    <p className="text-2xl font-bold text-purple-700">
+                      {zoneResidents.filter(r => r.gender === 'Male').length}
+                    </p>
+                  </div>
+                  <div className="bg-pink-50 p-3 rounded-lg">
+                    <p className="font-medium text-pink-900">Female Residents</p>
+                    <p className="text-2xl font-bold text-pink-700">
+                      {zoneResidents.filter(r => r.gender === 'Female').length}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setShowZoneModal(false)}
-                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Close
-                </button>
-              </div>
+              {zoneResidents.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Household
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Age
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Gender
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Occupation
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Role
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {zoneResidents.map((resident) => (
+                        <tr key={resident.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span className="text-blue-600 font-medium text-xs">
+                                  {resident.firstName.charAt(0)}{resident.lastName.charAt(0)}
+                                </span>
+                              </div>
+                              <div className="ml-3">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {resident.firstName} {resident.lastName}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {resident.email || "No email"}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-900">{resident.householdName}</div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {calculateAge(resident.birthdate)} years old
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {formatDate(resident.birthdate)}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              resident.gender === 'Male' ? 'bg-blue-100 text-blue-800' :
+                              resident.gender === 'Female' ? 'bg-pink-100 text-pink-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {resident.gender || "Not specified"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-900">
+                              {resident.occupation || "Not specified"}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              resident.isHead ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {resident.isHead ? 'Household Head' : 'Member'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-lg font-medium text-gray-900 mb-2">No residents found</p>
+                  <p className="text-gray-600">There are no active residents in this zone.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowResidentsModal(false)}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -399,6 +577,7 @@ export default function ZonesPage() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Most Households</p>
                     <p className="text-lg font-bold text-gray-900">{mostPopulated.name}</p>
+                    <p className="text-sm text-gray-500">{calculateHouseholdCount(mostPopulated.id)} households</p>
                   </div>
                 </div>
               </div>
@@ -426,8 +605,15 @@ export default function ZonesPage() {
                 <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                   Add New Zone
                 </button>
-                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  Export Data
+                <button 
+                  onClick={() => {
+                    fetchZones();
+                    fetchHouseholds();
+                    fetchResidents();
+                  }}
+                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Refresh Data
                 </button>
               </div>
             </div>
@@ -477,20 +663,20 @@ export default function ZonesPage() {
                           <div className="text-sm font-medium text-gray-900">{zone.name}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{zone.desciption || "No description"}</div>
+                          <div className="text-sm text-gray-900">{zone.description || "No description"}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            calculateHouseholdCount(zone) > 5 ? 'bg-green-100 text-green-800' :
-                            calculateHouseholdCount(zone) > 2 ? 'bg-blue-100 text-blue-800' :
+                            calculateHouseholdCount(zone.id) > 5 ? 'bg-green-100 text-green-800' :
+                            calculateHouseholdCount(zone.id) > 2 ? 'bg-blue-100 text-blue-800' :
                             'bg-orange-100 text-orange-800'
                           }`}>
-                            {calculateHouseholdCount(zone)} households
+                            {calculateHouseholdCount(zone.id)} households
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {calculateTotalResidents(zone)} residents
+                            {calculateTotalResidents(zone.id)} residents
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -500,16 +686,23 @@ export default function ZonesPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
-                            onClick={() => handleViewZone(zone)}
+                            onClick={() => handleViewResidents(zone)}
                             className="text-blue-600 hover:text-blue-900 mr-3"
                           >
                             View
                           </button>
-                          <button className="text-green-600 hover:text-green-900 mr-3">
+                          <button
+                            onClick={() => handleEditZone(zone)}
+                            className="text-green-600 hover:text-green-900 mr-3"
+                          >
                             Edit
                           </button>
-                          <button className="text-red-600 hover:text-red-900">
-                            Delete
+                          <button 
+                            onClick={() => handleDeleteZone(zone.id)}
+                            disabled={actionLoading}
+                            className="text-red-600 hover:text-red-900 disabled:text-red-300"
+                          >
+                            {actionLoading ? "Deleting..." : "Delete"}
                           </button>
                         </td>
                       </tr>
