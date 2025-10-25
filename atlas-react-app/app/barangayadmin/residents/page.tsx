@@ -1063,9 +1063,9 @@ export default function ResidentsPage() {
                 </button>
                 <button 
                   onClick={refreshData}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                   className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
-                  Refresh
+                  Refresh Data
                 </button>
               </div>
             </div>
