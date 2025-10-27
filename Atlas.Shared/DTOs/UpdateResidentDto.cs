@@ -8,6 +8,8 @@ namespace Atlas.Shared.DTOs
 {
    public class UpdateResidentDto
     {
+        public string Firstname { get; set; }
+        public string Lastname { get; set; }
         public string? MiddleName { get; set; }
         public DateTime Birthdate { get; set; }
         public string Gender { get; set; }
