@@ -4,278 +4,163 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Link from "next/link";
 
-interface Barangay {
+interface MunicipalityProfile {
   id: number;
   name: string;
   code: string;
-  municipalityId: number;
-  totalHouseholds?: number;
-  totalResidents?: number;
-  zones?: any[];
-  isActive: boolean;
-  dateCreated: string;
+  province: string;
+  region: string;
+  totalBarangays: number;
+  totalPopulation: number;
+  landArea: number;
+  contactNumber: string;
+  email: string;
+  address: string;
+  mayorName: string;
+  website?: string;
+  establishedYear?: number;
 }
 
-export default function MunicipalityBarangays() {
-  const { token, logout, isAuthenticated, loading } = useAuth();
-  const [barangays, setBarangays] = useState<Barangay[]>([]);
+export default function MunicipalityProfile() {
+  const { token, logout, isAuthenticated, loading, userInfo } = useAuth();
+  const [profile, setProfile] = useState<MunicipalityProfile | null>(null);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedBarangay, setSelectedBarangay] = useState<Barangay | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
     name: "",
     code: "",
-    isActive: true
+    province: "",
+    region: "",
+    contactNumber: "",
+    email: "",
+    address: "",
+    mayorName: "",
+    website: "",
+    establishedYear: ""
   });
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
-    fetchBarangays();
+    fetchProfile();
   }, [token, isAuthenticated]);
 
-  const fetchBarangays = async () => {
+  // Auto-hide success messages
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  const fetchProfile = async () => {
     setLoadingData(true);
     setError(null);
     
     try {
-      const res = await fetch("https://localhost:44336/api/Barangays", {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-      });
+      // In a real implementation, you would fetch from an endpoint like /api/municipality-admin/profile
+      // For now, we'll use mock data
+      const mockProfile: MunicipalityProfile = {
+        id: 1,
+        name: "Ajuy",
+        code: "MUN-AJU",
+        province: "Iloilo",
+        region: "Western Visayas (Region VI)",
+        totalBarangays: 1,
+        totalPopulation: 800,
+        landArea: 185.55,
+        contactNumber: "(033) 123-4567",
+        email: "municipality@ajuy.gov.ph",
+        address: "Poblacion, Ajuy, Iloilo",
+        mayorName: "Hon. Juan Dela Cruz",
+        website: "https://ajuy.ilooilo.gov.ph",
+        establishedYear: 1902
+      };
 
-      if (res.ok) {
-        const barangaysData = await res.json();
-        setBarangays(barangaysData);
-      } else {
-        console.error("Failed to fetch barangays data");
-        setError("Failed to load barangays data");
-        // Use sample data for demonstration
-        setBarangays([
-          { 
-            id: 1, 
-            name: "Barangay 1", 
-            code: "BRGY001", 
-            municipalityId: 1, 
-            totalHouseholds: 150, 
-            totalResidents: 600, 
-            zones: [],
-            isActive: true,
-            dateCreated: "2024-01-15"
-          },
-          { 
-            id: 2, 
-            name: "Barangay 2", 
-            code: "BRGY002", 
-            municipalityId: 1, 
-            totalHouseholds: 200, 
-            totalResidents: 800, 
-            zones: [],
-            isActive: true,
-            dateCreated: "2024-01-16"
-          },
-          { 
-            id: 3, 
-            name: "Barangay 3", 
-            code: "BRGY003", 
-            municipalityId: 1, 
-            totalHouseholds: 120, 
-            totalResidents: 480, 
-            zones: [],
-            isActive: false,
-            dateCreated: "2024-01-17"
-          }
-        ]);
-      }
+      setProfile(mockProfile);
+      setFormData({
+        name: mockProfile.name,
+        code: mockProfile.code,
+        province: mockProfile.province,
+        region: mockProfile.region,
+        contactNumber: mockProfile.contactNumber,
+        email: mockProfile.email,
+        address: mockProfile.address,
+        mayorName: mockProfile.mayorName,
+        website: mockProfile.website || "",
+        establishedYear: mockProfile.establishedYear?.toString() || ""
+      });
     } catch (err) {
-      console.error("Error fetching barangays:", err);
-      setError("Failed to load barangays data");
-      // Use sample data for demonstration
-      setBarangays([
-        { 
-          id: 1, 
-          name: "Barangay 1", 
-          code: "BRGY001", 
-          municipalityId: 1, 
-          totalHouseholds: 150, 
-          totalResidents: 600, 
-          zones: [],
-          isActive: true,
-          dateCreated: "2024-01-15"
-        },
-        { 
-          id: 2, 
-          name: "Barangay 2", 
-          code: "BRGY002", 
-          municipalityId: 1, 
-          totalHouseholds: 200, 
-          totalResidents: 800, 
-          zones: [],
-          isActive: true,
-          dateCreated: "2024-01-16"
-        },
-        { 
-          id: 3, 
-          name: "Barangay 3", 
-          code: "BRGY003", 
-          municipalityId: 1, 
-          totalHouseholds: 120, 
-          totalResidents: 480, 
-          zones: [],
-          isActive: false,
-          dateCreated: "2024-01-17"
-        }
-      ]);
+      console.error("Error fetching profile:", err);
+      setError("Failed to load profile data");
     } finally {
       setLoadingData(false);
     }
   };
 
-  const filteredBarangays = barangays.filter(barangay => {
-    const matchesSearch = 
-      barangay.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      barangay.code.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = selectedStatus === "all" || 
-      (selectedStatus === "active" && barangay.isActive) ||
-      (selectedStatus === "inactive" && !barangay.isActive);
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleAddBarangay = async (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setActionLoading(true);
-    
-    try {
-      // API call to add barangay
-      const res = await fetch("https://localhost:44336/api/Barangays", {
-        method: "POST",
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          code: formData.code,
-          municipalityId: 1, // This should come from the user's municipality
-          isActive: formData.isActive
-        })
-      });
+    setError(null);
 
-      if (res.ok) {
-        const newBarangay = await res.json();
-        setBarangays(prev => [...prev, newBarangay]);
-        setShowAddModal(false);
-        resetForm();
-      } else {
-        throw new Error("Failed to add barangay");
-      }
+    try {
+      // In a real implementation, you would make a PUT request to update the profile
+      // For now, we'll simulate the update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const updatedProfile: MunicipalityProfile = {
+        ...profile!,
+        name: formData.name,
+        code: formData.code,
+        province: formData.province,
+        region: formData.region,
+        contactNumber: formData.contactNumber,
+        email: formData.email,
+        address: formData.address,
+        mayorName: formData.mayorName,
+        website: formData.website || undefined,
+        establishedYear: formData.establishedYear ? parseInt(formData.establishedYear) : undefined
+      };
+
+      setProfile(updatedProfile);
+      setSuccess("Profile updated successfully!");
+      setEditMode(false);
     } catch (err) {
-      console.error("Error adding barangay:", err);
-      setError("Failed to add barangay");
+      console.error("Error updating profile:", err);
+      setError("Failed to update profile");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleEditBarangay = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedBarangay) return;
-    
-    setActionLoading(true);
-    
-    try {
-      // API call to update barangay
-      const res = await fetch(`https://localhost:44336/api/Barangays/${selectedBarangay.id}`, {
-        method: "PUT",
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          id: selectedBarangay.id,
-          name: formData.name,
-          code: formData.code,
-          municipalityId: selectedBarangay.municipalityId,
-          isActive: formData.isActive
-        })
+  const handleCancelEdit = () => {
+    if (profile) {
+      setFormData({
+        name: profile.name,
+        code: profile.code,
+        province: profile.province,
+        region: profile.region,
+        contactNumber: profile.contactNumber,
+        email: profile.email,
+        address: profile.address,
+        mayorName: profile.mayorName,
+        website: profile.website || "",
+        establishedYear: profile.establishedYear?.toString() || ""
       });
-
-      if (res.ok) {
-        const updatedBarangay = await res.json();
-        setBarangays(prev => prev.map(barangay => 
-          barangay.id === selectedBarangay.id ? updatedBarangay : barangay
-        ));
-        setShowEditModal(false);
-        setSelectedBarangay(null);
-        resetForm();
-      } else {
-        throw new Error("Failed to update barangay");
-      }
-    } catch (err) {
-      console.error("Error updating barangay:", err);
-      setError("Failed to update barangay");
-    } finally {
-      setActionLoading(false);
     }
+    setEditMode(false);
+    setError(null);
   };
 
-  const handleDeleteBarangay = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this barangay? This action cannot be undone.")) return;
-    
-    setActionLoading(true);
-    
-    try {
-      const res = await fetch(`https://localhost:44336/api/Barangays/${id}`, {
-        method: "DELETE",
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-      });
-
-      if (res.ok) {
-        setBarangays(prev => prev.filter(barangay => barangay.id !== id));
-      } else {
-        throw new Error("Failed to delete barangay");
-      }
-    } catch (err) {
-      console.error("Error deleting barangay:", err);
-      setError("Failed to delete barangay");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      code: "",
-      isActive: true
-    });
-  };
-
-  const openEditModal = (barangay: Barangay) => {
-    setSelectedBarangay(barangay);
-    setFormData({
-      name: barangay.name,
-      code: barangay.code,
-      isActive: barangay.isActive
-    });
-    setShowEditModal(true);
+  const handleChangePassword = async () => {
+    // This would typically open a change password modal
+    alert("Change password functionality would be implemented here");
   };
 
   if (loading) {
@@ -303,148 +188,6 @@ export default function MunicipalityBarangays() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Add Barangay Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Add New Barangay</h3>
-              <button 
-                onClick={() => { setShowAddModal(false); resetForm(); }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleAddBarangay}>
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Barangay Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter barangay name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Barangay Code *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.code}
-                    onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter barangay code"
-                  />
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label className="ml-2 text-sm text-gray-700">Active Barangay</label>
-                </div>
-              </div>
-
-              <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  {actionLoading ? "Adding..." : "Add Barangay"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowAddModal(false); resetForm(); }}
-                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Barangay Modal */}
-      {showEditModal && selectedBarangay && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Barangay</h3>
-              <button 
-                onClick={() => { setShowEditModal(false); setSelectedBarangay(null); resetForm(); }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleEditBarangay}>
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Barangay Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Barangay Code *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.code}
-                    onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label className="ml-2 text-sm text-gray-700">Active Barangay</label>
-                </div>
-              </div>
-
-              <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  {actionLoading ? "Updating..." : "Update Barangay"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowEditModal(false); setSelectedBarangay(null); resetForm(); }}
-                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Sidebar */}
       <div className="w-80 bg-white shadow-lg border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
@@ -467,20 +210,28 @@ export default function MunicipalityBarangays() {
               </Link>
             </li>
             <li>
-              <Link href="/municipalityadmin/profile" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a href="#" className="flex items-center space-x-3 px-4 py-3 text-gray-700 bg-blue-50 rounded-lg border border-blue-100">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span>Profile</span>
+                <span className="font-medium">Profile</span>
+              </a>
+            </li>
+            <li>
+              <Link href="/municipalityadmin/barangays" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span>Barangays</span>
               </Link>
             </li>
             <li>
-              <a href="#" className="flex items-center space-x-3 px-4 py-3 text-gray-700 bg-blue-50 rounded-lg border border-blue-100">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <Link href="/municipalityadmin/reports" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span className="font-medium">Barangays</span>
-              </a>
+                <span>Reports</span>
+              </Link>
             </li>
           </ul>
         </nav>
@@ -503,9 +254,67 @@ export default function MunicipalityBarangays() {
         <div className="p-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Barangays Management</h1>
-            <p className="text-gray-600 mt-2">Manage all barangays under your municipality.</p>
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Municipality Profile</h1>
+                <p className="text-gray-600 mt-2">
+                  Manage your municipality's profile information and settings.
+                </p>
+              </div>
+              <div className="flex space-x-3">
+                {!editMode ? (
+                  <>
+                    <button
+                      onClick={() => setEditMode(true)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={handleChangePassword}
+                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Change Password
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleSaveProfile}
+                      disabled={actionLoading}
+                      className="bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      {actionLoading ? "Saving..." : "Save Changes"}
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Success Message */}
+          {success && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-green-800">
+                    {success}
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -525,223 +334,290 @@ export default function MunicipalityBarangays() {
             </div>
           )}
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Barangays</p>
-                  <p className="text-2xl font-bold text-gray-900">{barangays.length}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Barangays</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {barangays.filter(b => b.isActive).length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="bg-orange-100 p-3 rounded-lg">
-                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Households</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {barangays.reduce((total, barangay) => total + (barangay.totalHouseholds || 0), 0)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="bg-purple-100 p-3 rounded-lg">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Residents</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {barangays.reduce((total, barangay) => total + (barangay.totalResidents || 0), 0)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Search and Actions */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                <div className="flex-1">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search barangays by name or code..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <svg className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="w-full sm:w-48">
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex space-x-3">
-                <button 
-                  onClick={() => setShowAddModal(true)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Add New Barangay
-                </button>
-                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  Export Data
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Barangays List */}
           {loadingData ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
               <div className="flex justify-center items-center space-x-2">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <p className="text-gray-600">Loading barangays data...</p>
+                <p className="text-gray-600">Loading profile data...</p>
               </div>
             </div>
-          ) : filteredBarangays.length > 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">All Barangays ({filteredBarangays.length})</h2>
+          ) : profile ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Municipality Information */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Municipality Information</h2>
+                  
+                  <form onSubmit={handleSaveProfile}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Municipality Name *</label>
+                        {editMode ? (
+                          <input
+                            type="text"
+                            required
+                            value={formData.name}
+                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-900 font-medium">{profile.name}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Municipality Code *</label>
+                        {editMode ? (
+                          <input
+                            type="text"
+                            required
+                            value={formData.code}
+                            onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-900 font-medium">{profile.code}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Province *</label>
+                        {editMode ? (
+                          <input
+                            type="text"
+                            required
+                            value={formData.province}
+                            onChange={(e) => setFormData(prev => ({ ...prev, province: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-900">{profile.province}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Region *</label>
+                        {editMode ? (
+                          <input
+                            type="text"
+                            required
+                            value={formData.region}
+                            onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-900">{profile.region}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number *</label>
+                        {editMode ? (
+                          <input
+                            type="text"
+                            required
+                            value={formData.contactNumber}
+                            onChange={(e) => setFormData(prev => ({ ...prev, contactNumber: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-900">{profile.contactNumber}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                        {editMode ? (
+                          <input
+                            type="email"
+                            required
+                            value={formData.email}
+                            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-900">{profile.email}</p>
+                        )}
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
+                        {editMode ? (
+                          <input
+                            type="text"
+                            required
+                            value={formData.address}
+                            onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-900">{profile.address}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Municipal Mayor *</label>
+                        {editMode ? (
+                          <input
+                            type="text"
+                            required
+                            value={formData.mayorName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, mayorName: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-900">{profile.mayorName}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                        {editMode ? (
+                          <input
+                            type="url"
+                            value={formData.website}
+                            onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="https://example.gov.ph"
+                          />
+                        ) : profile.website ? (
+                          <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                            {profile.website}
+                          </a>
+                        ) : (
+                          <p className="text-gray-500">Not specified</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Established Year</label>
+                        {editMode ? (
+                          <input
+                            type="number"
+                            value={formData.establishedYear}
+                            onChange={(e) => setFormData(prev => ({ ...prev, establishedYear: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., 1902"
+                          />
+                        ) : profile.establishedYear ? (
+                          <p className="text-gray-900">{profile.establishedYear}</p>
+                        ) : (
+                          <p className="text-gray-500">Not specified</p>
+                        )}
+                      </div>
+                    </div>
+                  </form>
+                </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Barangay Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Code
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Households
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Residents
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date Created
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredBarangays.map((barangay) => (
-                      <tr key={barangay.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{barangay.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{barangay.code}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {barangay.totalHouseholds || 0} households
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {barangay.totalResidents || 0} residents
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            barangay.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {barangay.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {new Date(barangay.dateCreated).toLocaleDateString()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => openEditModal(barangay)}
-                            className="text-blue-600 hover:text-blue-900 mr-3"
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteBarangay(barangay.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+              {/* Statistics and Quick Actions */}
+              <div className="space-y-6">
+                {/* Statistics Card */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Municipality Statistics</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Total Barangays</span>
+                      <span className="font-semibold text-gray-900">{profile.totalBarangays}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Total Population</span>
+                      <span className="font-semibold text-gray-900">{profile.totalPopulation.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Land Area</span>
+                      <span className="font-semibold text-gray-900">{profile.landArea} km²</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Population Density</span>
+                      <span className="font-semibold text-gray-900">
+                        {(profile.totalPopulation / profile.landArea).toFixed(2)}/km²
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Information */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Admin Name</label>
+                      <p className="text-gray-900 font-medium">{userInfo?.FirstName || "Municipality Admin"}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Email</label>
+                      <p className="text-gray-900">{userInfo?.Email || "admin@municipality.gov.ph"}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Role</label>
+                      <p className="text-gray-900">{userInfo?.Role || "Municipality Administrator"}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Last Login</label>
+                      <p className="text-gray-900">{new Date().toLocaleString()}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <button
+                      onClick={handleChangePassword}
+                      className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Change Password
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                  <div className="space-y-3">
+                    <Link
+                      href="/municipalityadmin/barangays"
+                      className="flex items-center space-x-3 p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                    >
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span className="text-sm font-medium text-blue-700">Manage Barangays</span>
+                    </Link>
+                    
+                    <Link
+                      href="/municipalityadmin/reports"
+                      className="flex items-center space-x-3 p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                    >
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="text-sm font-medium text-green-700">View Reports</span>
+                    </Link>
+                    
+                    <button
+                      onClick={() => setEditMode(true)}
+                      className="w-full flex items-center space-x-3 p-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
+                    >
+                      <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      <span className="text-sm font-medium text-orange-700">Edit Profile</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
               <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <p className="text-lg font-medium text-gray-900 mb-2">No barangays found</p>
-              <p className="text-gray-600 mb-4">
-                {searchTerm || selectedStatus !== "all" 
-                  ? 'No barangays match your search criteria.' 
-                  : 'No barangays data available.'
-                }
-              </p>
+              <p className="text-lg font-medium text-gray-900 mb-2">Profile not found</p>
+              <p className="text-gray-600 mb-4">Unable to load municipality profile information.</p>
               <button 
-                onClick={() => setShowAddModal(true)}
+                onClick={fetchProfile}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                Add Your First Barangay
+                Try Again
               </button>
             </div>
           )}
