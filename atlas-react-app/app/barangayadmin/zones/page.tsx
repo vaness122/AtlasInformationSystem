@@ -689,7 +689,7 @@ export default function ZonesPage() {
                             onClick={() => handleViewResidents(zone)}
                             className="text-blue-600 hover:text-blue-900 mr-3"
                           >
-                            View
+                            View Residents
                           </button>
                           <button
                             onClick={() => handleEditZone(zone)}
