@@ -9,16 +9,30 @@ interface Barangay {
   name: string;
   code: string;
   municipalityId: number;
-  municipalityName: string;
+  municipalityName: string | null;
   isActive?: boolean;
   dateCreated?: string;
 }
 
+interface BarangayStatistics {
+  barangayId: number;
+  barangayName: string;
+  totalZones: number;
+  totalHouseholds: number;
+  totalResidents: number;
+  averageHouseholdSize: number;
+  activeResidents: number;
+  householdHeads: number;
+  zoneStatistics: any[];
+}
+
 export default function MunicipalityBarangays() {
-  const { token, logout, isAuthenticated, loading } = useAuth();
+  const { token, logout, isAuthenticated, loading, userInfo } = useAuth();
   const [barangays, setBarangays] = useState<Barangay[]>([]);
+  const [barangayStats, setBarangayStats] = useState<BarangayStatistics[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -30,20 +44,31 @@ export default function MunicipalityBarangays() {
   const [formData, setFormData] = useState({
     name: "",
     code: "",
-    isActive: true
+    municipalityId: 1 // Default to user's municipality
   });
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
     fetchBarangays();
+    fetchBarangayStatistics();
   }, [token, isAuthenticated]);
+
+  // Auto-hide success messages
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   const fetchBarangays = async () => {
     setLoadingData(true);
     setError(null);
     
     try {
-      const res = await fetch("https://localhost:44336/api/Barangays", {
+      const res = await fetch("https://localhost:44336/api/municipality-admin/barangays", {
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -54,60 +79,52 @@ export default function MunicipalityBarangays() {
       if (res.ok) {
         const barangaysData = await res.json();
         console.log("Barangays API Response:", barangaysData);
-        
-        // Add isActive and dateCreated fields since they're not in the API response
-        const barangaysWithStatus = barangaysData.map((barangay: Barangay) => ({
-          ...barangay,
-          isActive: true, // Default to active since API doesn't provide this
-          dateCreated: new Date().toISOString().split('T')[0] // Default to today
-        }));
-        
-        setBarangays(barangaysWithStatus);
+        setBarangays(barangaysData);
       } else {
         console.error("Failed to fetch barangays data");
         setError("Failed to load barangays data");
-        // Use sample data for demonstration
-        setBarangays([
-          { 
-            id: 1, 
-            name: "Adcadarao", 
-            code: "ADC", 
-            municipalityId: 1, 
-            municipalityName: "Ajuy",
-            isActive: true,
-            dateCreated: "2024-01-15"
-          }
-        ]);
       }
     } catch (err) {
       console.error("Error fetching barangays:", err);
       setError("Failed to load barangays data");
-      // Use sample data for demonstration
-      setBarangays([
-        { 
-          id: 1, 
-          name: "Adcadarao", 
-          code: "ADC", 
-          municipalityId: 1, 
-          municipalityName: "Ajuy",
-          isActive: true,
-          dateCreated: "2024-01-15"
-        }
-      ]);
     } finally {
       setLoadingData(false);
     }
   };
 
+  const fetchBarangayStatistics = async () => {
+    try {
+      const res = await fetch("https://localhost:44336/api/municipality-admin/barangays/statistics", {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+      });
+
+      if (res.ok) {
+        const statsData = await res.json();
+        console.log("Barangay Statistics API Response:", statsData);
+        setBarangayStats(statsData);
+      } else {
+        console.error("Failed to fetch barangay statistics");
+      }
+    } catch (err) {
+      console.error("Error fetching barangay statistics:", err);
+    }
+  };
+
+  const getBarangayStats = (barangayId: number) => {
+    return barangayStats.find(stats => stats.barangayId === barangayId);
+  };
+
   const filteredBarangays = barangays.filter(barangay => {
     const matchesSearch = 
       barangay.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      barangay.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      barangay.municipalityName.toLowerCase().includes(searchTerm.toLowerCase());
+      barangay.code.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = selectedStatus === "all" || 
-      (selectedStatus === "active" && barangay.isActive) ||
-      (selectedStatus === "inactive" && !barangay.isActive);
+    // Since the API doesn't return isActive, we'll assume all are active
+    const matchesStatus = selectedStatus === "all" || selectedStatus === "active";
     
     return matchesSearch && matchesStatus;
   });
@@ -115,41 +132,52 @@ export default function MunicipalityBarangays() {
   const handleAddBarangay = async (e: React.FormEvent) => {
     e.preventDefault();
     setActionLoading(true);
+    setError(null);
     
     try {
-      // API call to add barangay
-      const res = await fetch("https://localhost:44336/api/Barangays", {
+      // Validate required fields
+      if (!formData.name || !formData.code) {
+        setError("Please fill in all required fields");
+        setActionLoading(false);
+        return;
+      }
+
+      const barangayData = {
+        name: formData.name,
+        code: formData.code,
+        municipalityId: formData.municipalityId
+      };
+
+      console.log("Sending barangay data:", barangayData);
+
+      const res = await fetch("https://localhost:44336/api/municipality-admin/barangays", {
         method: "POST",
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({
-          name: formData.name,
-          code: formData.code,
-          municipalityId: 1, // This should come from the user's municipality
-          // Note: API might not support isActive field
-        })
+        body: JSON.stringify(barangayData)
       });
 
       if (res.ok) {
         const newBarangay = await res.json();
-        // Add the missing fields for UI consistency
-        const barangayWithStatus = {
-          ...newBarangay,
-          isActive: formData.isActive,
-          dateCreated: new Date().toISOString().split('T')[0]
-        };
-        setBarangays(prev => [...prev, barangayWithStatus]);
+        console.log("New barangay response:", newBarangay);
+        
+        setSuccess(`Barangay "${newBarangay.name}" added successfully!`);
+        setBarangays(prev => [...prev, newBarangay]);
         setShowAddModal(false);
         resetForm();
+        // Refresh statistics
+        fetchBarangayStatistics();
       } else {
-        throw new Error("Failed to add barangay");
+        const errorText = await res.text();
+        console.error("API Error Response:", errorText);
+        throw new Error(`Failed to add barangay: ${res.status} ${errorText}`);
       }
     } catch (err) {
       console.error("Error adding barangay:", err);
-      setError("Failed to add barangay");
+      setError("Failed to add barangay: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setActionLoading(false);
     }
@@ -160,45 +188,55 @@ export default function MunicipalityBarangays() {
     if (!selectedBarangay) return;
     
     setActionLoading(true);
+    setError(null);
     
     try {
-      // API call to update barangay
-      const res = await fetch(`https://localhost:44336/api/Barangays/${selectedBarangay.id}`, {
+      // Validate required fields
+      if (!formData.name || !formData.code) {
+        setError("Please fill in all required fields");
+        setActionLoading(false);
+        return;
+      }
+
+      const barangayData = {
+        name: formData.name,
+        code: formData.code,
+        municipalityId: selectedBarangay.municipalityId
+      };
+
+      console.log("Updating barangay data:", barangayData);
+
+      const res = await fetch(`https://localhost:44336/api/municipality-admin/barangays/${selectedBarangay.id}`, {
         method: "PUT",
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({
-          id: selectedBarangay.id,
-          name: formData.name,
-          code: formData.code,
-          municipalityId: selectedBarangay.municipalityId,
-          // Note: API might not support isActive field
-        })
+        body: JSON.stringify(barangayData)
       });
 
       if (res.ok) {
         const updatedBarangay = await res.json();
-        // Add the missing fields for UI consistency
-        const barangayWithStatus = {
-          ...updatedBarangay,
-          isActive: formData.isActive,
-          dateCreated: selectedBarangay.dateCreated
-        };
+        console.log("Updated barangay response:", updatedBarangay);
+        
+        setSuccess(`Barangay "${updatedBarangay.name}" updated successfully!`);
         setBarangays(prev => prev.map(barangay => 
-          barangay.id === selectedBarangay.id ? barangayWithStatus : barangay
+          barangay.id === selectedBarangay.id ? updatedBarangay : barangay
         ));
         setShowEditModal(false);
         setSelectedBarangay(null);
         resetForm();
+        // Refresh statistics
+        fetchBarangayStatistics();
       } else {
-        throw new Error("Failed to update barangay");
+        const errorText = await res.text();
+        console.error("API Error Response:", errorText);
+        throw new Error(`Failed to update barangay: ${res.status} ${errorText}`);
       }
     } catch (err) {
       console.error("Error updating barangay:", err);
-      setError("Failed to update barangay");
+      setError("Failed to update barangay: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setActionLoading(false);
     }
@@ -208,9 +246,10 @@ export default function MunicipalityBarangays() {
     if (!confirm("Are you sure you want to delete this barangay? This action cannot be undone.")) return;
     
     setActionLoading(true);
+    setError(null);
     
     try {
-      const res = await fetch(`https://localhost:44336/api/Barangays/${id}`, {
+      const res = await fetch(`https://localhost:44336/api/municipality-admin/barangays/${id}`, {
         method: "DELETE",
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -220,13 +259,18 @@ export default function MunicipalityBarangays() {
       });
 
       if (res.ok) {
+        const deletedBarangay = barangays.find(b => b.id === id);
+        setSuccess(`Barangay "${deletedBarangay?.name}" deleted successfully!`);
         setBarangays(prev => prev.filter(barangay => barangay.id !== id));
+        // Refresh statistics
+        fetchBarangayStatistics();
       } else {
-        throw new Error("Failed to delete barangay");
+        const errorText = await res.text();
+        throw new Error(`Failed to delete barangay: ${res.status} ${errorText}`);
       }
     } catch (err) {
       console.error("Error deleting barangay:", err);
-      setError("Failed to delete barangay");
+      setError("Failed to delete barangay: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setActionLoading(false);
     }
@@ -236,7 +280,7 @@ export default function MunicipalityBarangays() {
     setFormData({
       name: "",
       code: "",
-      isActive: true
+      municipalityId: 1
     });
   };
 
@@ -245,10 +289,16 @@ export default function MunicipalityBarangays() {
     setFormData({
       name: barangay.name,
       code: barangay.code,
-      isActive: barangay.isActive || true
+      municipalityId: barangay.municipalityId
     });
     setShowEditModal(true);
   };
+
+  // Calculate statistics
+  const totalBarangays = barangays.length;
+  const totalHouseholds = barangayStats.reduce((total, stats) => total + stats.totalHouseholds, 0);
+  const totalResidents = barangayStats.reduce((total, stats) => total + stats.totalResidents, 0);
+  const totalZones = barangayStats.reduce((total, stats) => total + stats.totalZones, 0);
 
   if (loading) {
     return (
@@ -315,14 +365,8 @@ export default function MunicipalityBarangays() {
                     placeholder="Enter barangay code"
                   />
                 </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label className="ml-2 text-sm text-gray-700">Active Barangay</label>
+                <div className="text-sm text-gray-500">
+                  <p>Municipality: {userInfo?.MunicipalityId || "Your Municipality"}</p>
                 </div>
               </div>
 
@@ -385,14 +429,8 @@ export default function MunicipalityBarangays() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label className="ml-2 text-sm text-gray-700">Active Barangay</label>
+                <div className="text-sm text-gray-500">
+                  <p>Municipality ID: {selectedBarangay.municipalityId}</p>
                 </div>
               </div>
 
@@ -454,6 +492,14 @@ export default function MunicipalityBarangays() {
                 <span className="font-medium">Barangays</span>
               </a>
             </li>
+            <li>
+              <Link href="/municipalityadmin/reports" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Reports</span>
+              </Link>
+            </li>
           </ul>
         </nav>
 
@@ -478,6 +524,24 @@ export default function MunicipalityBarangays() {
             <h1 className="text-3xl font-bold text-gray-900">Barangays Management</h1>
             <p className="text-gray-600 mt-2">Manage all barangays under your municipality.</p>
           </div>
+
+          {/* Success Message */}
+          {success && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-green-800">
+                    {success}
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -508,7 +572,7 @@ export default function MunicipalityBarangays() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Barangays</p>
-                  <p className="text-2xl font-bold text-gray-900">{barangays.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalBarangays}</p>
                 </div>
               </div>
             </div>
@@ -517,14 +581,12 @@ export default function MunicipalityBarangays() {
               <div className="flex items-center">
                 <div className="bg-green-100 p-3 rounded-lg">
                   <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Barangays</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {barangays.filter(b => b.isActive).length}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Total Households</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalHouseholds}</p>
                 </div>
               </div>
             </div>
@@ -533,14 +595,12 @@ export default function MunicipalityBarangays() {
               <div className="flex items-center">
                 <div className="bg-orange-100 p-3 rounded-lg">
                   <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Municipality</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {barangays[0]?.municipalityName || "N/A"}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Total Residents</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalResidents}</p>
                 </div>
               </div>
             </div>
@@ -549,14 +609,12 @@ export default function MunicipalityBarangays() {
               <div className="flex items-center">
                 <div className="bg-purple-100 p-3 rounded-lg">
                   <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Municipality ID</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {barangays[0]?.municipalityId || "N/A"}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Total Zones</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalZones}</p>
                 </div>
               </div>
             </div>
@@ -570,7 +628,7 @@ export default function MunicipalityBarangays() {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search barangays by name, code, or municipality..."
+                      placeholder="Search barangays by name or code..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -580,17 +638,6 @@ export default function MunicipalityBarangays() {
                     </svg>
                   </div>
                 </div>
-                <div className="w-full sm:w-48">
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
               </div>
               <div className="flex space-x-3">
                 <button 
@@ -599,8 +646,14 @@ export default function MunicipalityBarangays() {
                 >
                   Add New Barangay
                 </button>
-                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  Export Data
+                <button 
+                  onClick={() => {
+                    fetchBarangays();
+                    fetchBarangayStatistics();
+                  }}
+                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Refresh Data
                 </button>
               </div>
             </div>
@@ -630,13 +683,16 @@ export default function MunicipalityBarangays() {
                         Code
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Municipality
+                        Households
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
+                        Residents
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date Created
+                        Zones
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Avg. HH Size
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
@@ -644,45 +700,55 @@ export default function MunicipalityBarangays() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredBarangays.map((barangay) => (
-                      <tr key={barangay.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{barangay.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{barangay.code}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{barangay.municipalityName}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            barangay.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {barangay.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {barangay.dateCreated ? new Date(barangay.dateCreated).toLocaleDateString() : 'N/A'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => openEditModal(barangay)}
-                            className="text-blue-600 hover:text-blue-900 mr-3"
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteBarangay(barangay.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredBarangays.map((barangay) => {
+                      const stats = getBarangayStats(barangay.id);
+                      return (
+                        <tr key={barangay.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{barangay.name}</div>
+                            <div className="text-xs text-gray-500">ID: {barangay.id}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{barangay.code}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {stats?.totalHouseholds || 0} households
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {stats?.totalResidents || 0} residents
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              {stats?.totalZones || 0} zones
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                              {stats?.averageHouseholdSize?.toFixed(2) || 0}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => openEditModal(barangay)}
+                              className="text-blue-600 hover:text-blue-900 mr-3"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteBarangay(barangay.id)}
+                              disabled={actionLoading}
+                              className="text-red-600 hover:text-red-900 disabled:text-red-300"
+                            >
+                              {actionLoading ? "Deleting..." : "Delete"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -694,9 +760,9 @@ export default function MunicipalityBarangays() {
               </svg>
               <p className="text-lg font-medium text-gray-900 mb-2">No barangays found</p>
               <p className="text-gray-600 mb-4">
-                {searchTerm || selectedStatus !== "all" 
+                {searchTerm 
                   ? 'No barangays match your search criteria.' 
-                  : 'No barangays data available.'
+                  : 'No barangays have been created yet.'
                 }
               </p>
               <button 

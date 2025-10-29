@@ -43,6 +43,12 @@ interface Resident {
   householdName?: string;
 }
 
+interface CreateZoneDto {
+  name: string;
+  description: string;
+  barangayId: number;
+}
+
 export default function ZonesPage() {
   const { token, logout, isAuthenticated, loading } = useAuth();
   const [zones, setZones] = useState<Zone[]>([]);
@@ -50,11 +56,20 @@ export default function ZonesPage() {
   const [residents, setResidents] = useState<Resident[]>([]);
   const [zonesLoading, setZonesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
   const [showResidentsModal, setShowResidentsModal] = useState(false);
   const [zoneResidents, setZoneResidents] = useState<Resident[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingZone, setEditingZone] = useState<Zone | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: ""
+  });
+  const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
@@ -63,6 +78,17 @@ export default function ZonesPage() {
     fetchHouseholds();
     fetchResidents();
   }, [token, isAuthenticated]);
+
+  // Clear messages after 5 seconds
+  useEffect(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError(null);
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, success]);
 
   const fetchZones = async () => {
     setZonesLoading(true);
@@ -81,6 +107,9 @@ export default function ZonesPage() {
         const zonesData = await res.json();
         console.log("Zones API Response:", zonesData);
         setZones(zonesData);
+      } else if (res.status === 401) {
+        setError("Session expired. Please login again.");
+        logout();
       } else {
         console.error("Failed to fetch zones");
         setError("Failed to load zones data");
@@ -137,9 +166,153 @@ export default function ZonesPage() {
     }
   };
 
+  const createZone = async (zoneData: CreateZoneDto) => {
+    setFormLoading(true);
+    setError(null);
+    
+    try {
+      const res = await fetch("https://localhost:44336/api/barangay-admin/zones", {
+        method: "POST",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(zoneData)
+      });
+
+      if (res.ok) {
+        const newZone = await res.json();
+        setZones(prev => [...prev, newZone]);
+        setSuccess("Zone created successfully!");
+        setShowCreateModal(false);
+        setFormData({ name: "", description: "" });
+        
+        // Refresh households and residents to ensure data consistency
+        fetchHouseholds();
+        fetchResidents();
+      } else {
+        const errorText = await res.text();
+        throw new Error(`Failed to create zone: ${res.status} ${errorText}`);
+      }
+    } catch (err) {
+      console.error("Error creating zone:", err);
+      setError("Failed to create zone: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const updateZone = async (zoneId: number, zoneData: { name: string; description: string }) => {
+    setFormLoading(true);
+    setError(null);
+    
+    try {
+      const res = await fetch(`https://localhost:44336/api/barangay-admin/zones/${zoneId}`, {
+        method: "PUT",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(zoneData)
+      });
+
+      if (res.ok) {
+        const updatedZone = await res.json();
+        setZones(prev => prev.map(zone => zone.id === zoneId ? updatedZone : zone));
+        setSuccess("Zone updated successfully!");
+        setShowEditModal(false);
+        setEditingZone(null);
+        setFormData({ name: "", description: "" });
+      } else {
+        const errorText = await res.text();
+        throw new Error(`Failed to update zone: ${res.status} ${errorText}`);
+      }
+    } catch (err) {
+      console.error("Error updating zone:", err);
+      setError("Failed to update zone: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      setError("Zone name is required");
+      return;
+    }
+
+    // Get barangayId from token or use default (you might want to get this from user context)
+    const barangayId = 1; // This should come from your auth context or user data
+    
+    createZone({
+      name: formData.name.trim(),
+      description: formData.description.trim(),
+      barangayId
+    });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !editingZone) {
+      setError("Zone name is required");
+      return;
+    }
+
+    updateZone(editingZone.id, {
+      name: formData.name.trim(),
+      description: formData.description.trim()
+    });
+  };
+
+  const handleEditZone = (zone: Zone) => {
+    setEditingZone(zone);
+    setFormData({
+      name: zone.name,
+      description: zone.description || ""
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDeleteZone = async (zoneId: number) => {
+    if (!confirm("Are you sure you want to delete this zone? This action cannot be undone.")) return;
+    
+    setActionLoading(true);
+    setError(null);
+    
+    try {
+      const res = await fetch(`https://localhost:44336/api/barangay-admin/zones/${zoneId}`, {
+        method: "DELETE",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+      });
+
+      if (res.ok) {
+        setZones(prev => prev.filter(zone => zone.id !== zoneId));
+        setSuccess("Zone deleted successfully!");
+        // Refresh households and residents data
+        fetchHouseholds();
+        fetchResidents();
+      } else {
+        const errorText = await res.text();
+        throw new Error(`Failed to delete zone: ${res.status} ${errorText}`);
+      }
+    } catch (err) {
+      console.error("Error deleting zone:", err);
+      setError("Failed to delete zone: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const filteredZones = zones.filter(zone => 
     zone.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    zone.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    (zone.description && zone.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Calculate household count for a zone
@@ -187,44 +360,6 @@ export default function ZonesPage() {
     setShowResidentsModal(true);
   };
 
-  const handleEditZone = (zone: Zone) => {
-    // Implement edit functionality
-    console.log("Edit zone:", zone);
-  };
-
-  const handleDeleteZone = async (zoneId: number) => {
-    if (!confirm("Are you sure you want to delete this zone? This action cannot be undone.")) return;
-    
-    setActionLoading(true);
-    setError(null);
-    
-    try {
-      const res = await fetch(`https://localhost:44336/api/barangay-admin/zones/${zoneId}`, {
-        method: "DELETE",
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-      });
-
-      if (res.ok) {
-        setZones(prev => prev.filter(zone => zone.id !== zoneId));
-        // Refresh households and residents data
-        fetchHouseholds();
-        fetchResidents();
-      } else {
-        const errorText = await res.text();
-        throw new Error(`Failed to delete zone: ${res.status} ${errorText}`);
-      }
-    } catch (err) {
-      console.error("Error deleting zone:", err);
-      setError("Failed to delete zone: " + (err instanceof Error ? err.message : "Unknown error"));
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   // Format date for display
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Not specified";
@@ -250,10 +385,16 @@ export default function ZonesPage() {
     return age;
   };
 
+  const resetForm = () => {
+    setFormData({ name: "", description: "" });
+    setError(null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-lg text-gray-600">Loading authentication...</p>
         </div>
       </div>
@@ -275,6 +416,158 @@ export default function ZonesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Create Zone Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Create New Zone</h3>
+              <button 
+                onClick={() => {
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSubmit} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Zone Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter zone name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter zone description (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    resetForm();
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={formLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {formLoading ? "Creating..." : "Create Zone"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Zone Modal */}
+      {showEditModal && editingZone && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Zone</h3>
+              <button 
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingZone(null);
+                  resetForm();
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Zone Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter zone name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    id="edit-description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter zone description (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingZone(null);
+                    resetForm();
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={formLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {formLoading ? "Updating..." : "Update Zone"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Residents Details Modal */}
       {showResidentsModal && selectedZone && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -504,6 +797,24 @@ export default function ZonesPage() {
             <p className="text-gray-600 mt-2">Manage and view all zones in your barangay.</p>
           </div>
 
+          {/* Success Message */}
+          {success && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-green-800">
+                    <strong>Success:</strong> {success}
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -602,7 +913,10 @@ export default function ZonesPage() {
                 </div>
               </div>
               <div className="flex space-x-3">
-                <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
                   Add New Zone
                 </button>
                 <button 
@@ -610,6 +924,7 @@ export default function ZonesPage() {
                     fetchZones();
                     fetchHouseholds();
                     fetchResidents();
+                    setSuccess("Data refreshed successfully!");
                   }}
                   className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
@@ -720,7 +1035,10 @@ export default function ZonesPage() {
               <p className="text-gray-600 mb-4">
                 {searchTerm ? 'No zones match your search criteria.' : 'No zones data available.'}
               </p>
-              <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
                 Add Your First Zone
               </button>
             </div>
