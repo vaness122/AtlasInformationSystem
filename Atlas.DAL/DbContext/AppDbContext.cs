@@ -158,14 +158,14 @@ namespace Atlas.DAL.DbContext
        {
            Id = 1,
            Name = "Zone 1",
-           Desciption = "Central zone of Adcadarao",
+           Description = "Central zone of Adcadarao",
            BarangayId = 1
        },
        new Zone
        {
            Id = 2,
            Name = "Zone 2",
-           Desciption = "Northern zone of Adcadarao",
+           Description = "Northern zone of Adcadarao",
            BarangayId = 1
        }
    );
