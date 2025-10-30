@@ -1,6 +1,7 @@
 "use client";
 import { navlinks } from '@/constant/constant';
 import Link from 'next/link';
+import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { GrTechnology } from 'react-icons/gr';
 import { HiBars3BottomRight } from 'react-icons/hi2';
@@ -45,12 +46,19 @@ const Nav: React.FC<NavProps> = ({ openNav }) => {
   if (['/signup', '/login'].includes(pathname)) return null;
 
   return (
-    <div className={`transition-all fixed duration-200 h-[12vh] z-[100] w-full ${navbg ? 'bg-white shadow-md' : ''}`}>
-      <div className='flex items-center h-full justify-between w-[90%] x1:w-[80%] mx-auto'>
-        {/* logo */}
+    <div className={`fixed ${navbg ? 'bg-white shadow-md' : ''} h-[12vh] z-10 w-full transition-all duration-200`}>
+      <div className='flex items-center h-full justify-between w-[90%] xl:w-[80%] mx-auto'>
+        
+        {/* Logo Section */}
         <div className='flex items-center space-x-2'>
           <div className='w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center'>
-            <GrTechnology className='w-6 h-6 text-white' />
+            <Image 
+              src="/images/atlas.jpg" 
+              alt="Atlas Logo" 
+              width={24} 
+              height={24}
+              className="text-white rounded-full"
+            />
           </div>
           <h1 className='text-xl hidden sm:block md:text-2xl text-blue-800 font-bold'>
             Atlas
@@ -70,7 +78,7 @@ const Nav: React.FC<NavProps> = ({ openNav }) => {
           ))}
         </div>
 
-        {/* button */}
+        {/* Button Section */}
         <div className='flex items-center space-x-4'>
           <Link
             href="/signup"
@@ -93,7 +101,7 @@ const Nav: React.FC<NavProps> = ({ openNav }) => {
             <span className="relative">Create Account</span>
           </Link>
 
-          {/* burger menu */}
+          {/* Burger Menu */}
           <HiBars3BottomRight
             className='w-8 h-8 lg:hidden cursor-pointer text-black'
             onClick={openNav}

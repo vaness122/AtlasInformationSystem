@@ -10,6 +10,12 @@
     public List<string> Roles { get; set; } = new List<string>();
     public int? BarangayId { get; set; }
     public int? MunicipalityId { get; set; }
-    
+
+
+        public DateTime? LastLoginDate { get; set; }
+        public int LoginCount { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedDate { get; set; }
+
     }
 }

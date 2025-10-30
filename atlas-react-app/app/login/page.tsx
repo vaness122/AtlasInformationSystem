@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import Image from 'next/image';
 
 const IconEye = () => (
   <svg
@@ -149,7 +150,20 @@ export default function LoginPage() {
         id="login"
         className="w-full max-w-md bg-white bg-opacity-90 p-8 rounded-xl shadow-2xl backdrop-blur-sm"
       >
-        <h1 className="text-3xl font-extrabold mb-8 text-center text-gray-900">Atlas Login</h1>
+        {/* Logo Section - Added above the login title */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center mb-3">
+            <Image 
+              src="/images/atlas.jpg" 
+              alt="Atlas Logo" 
+              width={64}
+              height={64}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <h1 className="text-3xl font-extrabold text-center text-gray-900">Login</h1>
+          <p className="text-sm text-gray-600 mt-1 text-center">Barangay Information System</p>
+        </div>
 
         {isAuthenticated ? (
           <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
