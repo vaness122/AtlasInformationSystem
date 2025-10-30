@@ -13,7 +13,6 @@ namespace Atlas.Core.Models
     {
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public int PhoneNumber { get; set; }
        
         public UserRole Role { get; set; }
         public int? MunicipalityId { get; set; }

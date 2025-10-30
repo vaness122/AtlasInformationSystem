@@ -46,6 +46,11 @@ export default function BarangayProfilePage() {
           headers: { 
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+
+
+
+
+            
           },
         });
 
@@ -67,7 +72,7 @@ export default function BarangayProfilePage() {
             firstName: data.FirstName || "",
             middleName: data.MiddleName || "",
             lastName: data.LastName || "",
-            contactNumber: data.ContactNumber || "",
+            contactNumber: data.PhoneNumber || "",
             email: data.Email || ""
           });
         }

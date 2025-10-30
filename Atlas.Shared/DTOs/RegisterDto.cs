@@ -18,6 +18,8 @@ namespace Atlas.Shared.DTOs
         [Required]
         [EmailAddress(ErrorMessage = "Invalid email format.")]
         public string Email { get; set; }
+        [Phone(ErrorMessage = "Invalid phone number format.")]
+        public string? PhoneNumber { get; set; }
 
         [Required]
         public string Password { get; set; }
