@@ -13,9 +13,9 @@ namespace Atlas.DAL.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.RenameColumn(
-                name: "Desctiption",
+                name: "Description",
                 table: "Zones",
-                newName: "Desciption");
+                newName: "Description");
 
             migrationBuilder.InsertData(
                 table: "Zones",
@@ -41,9 +41,9 @@ namespace Atlas.DAL.Migrations
                 keyValue: 2);
 
             migrationBuilder.RenameColumn(
-                name: "Desciption",
+                name: "Description",
                 table: "Zones",
-                newName: "Desctiption");
+                newName: "Description");
         }
     }
 }

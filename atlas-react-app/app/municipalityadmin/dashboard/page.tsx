@@ -182,23 +182,50 @@ export default function MunicipalityDashboard() {
     fetchDashboardData();
   }, [token, isAuthenticated]);
 
+  // Debug useEffect to check data
+  useEffect(() => {
+    console.log("Data loaded:", {
+      allResidents: allResidents.length,
+      allHouseholds: allHouseholds.length,
+      allZones: allZones.length,
+      barangays: barangays.length
+    });
+    
+    if (allResidents.length > 0) {
+      console.log("Sample resident:", {
+        id: allResidents[0].id,
+        householdId: allResidents[0].householdId,
+        householdName: allResidents[0].householdName
+      });
+    }
+    
+    if (allHouseholds.length > 0) {
+      console.log("Sample household:", {
+        id: allHouseholds[0].id,
+        name: allHouseholds[0].houseHoldName
+      });
+    }
+  }, [allResidents, allHouseholds, allZones, barangays]);
+
   const fetchDashboardData = async () => {
     setLoadingData(true);
     setError(null);
     
     try {
-      // Fetch all statistics in parallel
+      // Fetch basic data first
       await Promise.all([
-        fetchReport(),
-        fetchMunicipalityStatistics(),
-        fetchResidentStatistics(),
-        fetchHouseholdStatistics(),
-        fetchZonesStatistics(),
-        fetchBarangaysStatistics(),
-        fetchBarangays(),
         fetchAllResidents(),
         fetchAllHouseholds(),
-        fetchAllZones()
+        fetchAllZones(),
+        fetchBarangays()
+      ]);
+      
+      // Then fetch statistics
+      await Promise.all([
+        fetchReport(),
+        fetchResidentStatistics(),
+        fetchHouseholdStatistics(),
+        fetchBarangaysStatistics()
       ]);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
@@ -369,12 +396,15 @@ export default function MunicipalityDashboard() {
 
       if (res.ok) {
         const data = await res.json();
+        console.log("Fetched residents:", data.length);
         setAllResidents(data);
       } else {
-        console.error("Failed to fetch residents");
+        console.error("Failed to fetch residents:", res.status);
+        throw new Error(`Failed to fetch residents: ${res.status}`);
       }
     } catch (err) {
       console.error("Error fetching residents:", err);
+      throw err;
     }
   };
 
@@ -391,12 +421,15 @@ export default function MunicipalityDashboard() {
 
       if (res.ok) {
         const data = await res.json();
+        console.log("Fetched households:", data.length);
         setAllHouseholds(data);
       } else {
         console.error("Failed to fetch households");
+        throw new Error(`Failed to fetch households: ${res.status}`);
       }
     } catch (err) {
       console.error("Error fetching households:", err);
+      throw err;
     }
   };
 
@@ -413,16 +446,32 @@ export default function MunicipalityDashboard() {
 
       if (res.ok) {
         const data = await res.json();
+        console.log("Fetched zones:", data.length);
         setAllZones(data);
       } else {
         console.error("Failed to fetch zones");
+        throw new Error(`Failed to fetch zones: ${res.status}`);
       }
     } catch (err) {
       console.error("Error fetching zones:", err);
+      throw err;
     }
   };
 
-  // Handle view details click
+  // Get accurate resident count for a household - FIXED
+  const getHouseholdResidentCount = (householdId: number) => {
+    const count = allResidents.filter(resident => {
+      // Handle both string and number comparisons
+      const residentHouseholdId = resident.householdId?.toString();
+      const targetHouseholdId = householdId.toString();
+      return residentHouseholdId === targetHouseholdId;
+    }).length;
+    
+    console.log(`Household ${householdId} resident count:`, count);
+    return count;
+  };
+
+  // Handle view details click - FIXED
   const handleViewDetails = async (barangay: BarangayStatistic) => {
     setSelectedBarangay(barangay);
     setLoadingDetails(true);
@@ -432,12 +481,22 @@ export default function MunicipalityDashboard() {
     setHouseholdSearchTerm("");
 
     try {
-      // Filter residents and households for the selected barangay
-      const filteredResidents = allResidents.filter(resident => resident.barangayId === barangay.barangayId);
+      // Filter residents for the selected barangay - FIXED
+      const filteredResidents = allResidents.filter(resident => {
+        return resident.barangayId === barangay.barangayId;
+      });
+
+      // Filter households for the selected barangay - FIXED
       const filteredHouseholds = allHouseholds.filter(household => {
         // Find the zone to get barangayId
         const zone = allZones.find(z => z.id === household.zoneId);
         return zone?.barangayId === barangay.barangayId;
+      });
+
+      console.log(`Barangay ${barangay.barangayName} details:`, {
+        residents: filteredResidents.length,
+        households: filteredHouseholds.length,
+        barangayId: barangay.barangayId
       });
 
       setBarangayResidents(filteredResidents);
@@ -450,7 +509,7 @@ export default function MunicipalityDashboard() {
     }
   };
 
-  // Handle view household details - FIXED VERSION
+  // Handle view household details - FIXED
   const handleViewHouseholdDetails = async (household: Household) => {
     setLoadingHouseholdDetails(true);
     
@@ -461,8 +520,10 @@ export default function MunicipalityDashboard() {
       // Filter residents for this household - FIXED: Proper comparison
       const householdMembers = allResidents
         .filter(resident => {
-          // Convert both to string for safe comparison since householdId is string and id is number
-          return resident.householdId === household.id.toString();
+          // Convert both to string for safe comparison
+          const residentHouseholdId = resident.householdId?.toString();
+          const targetHouseholdId = household.id.toString();
+          return residentHouseholdId === targetHouseholdId;
         })
         .map(resident => ({
           id: resident.id,
@@ -482,6 +543,12 @@ export default function MunicipalityDashboard() {
       // Calculate actual resident count from filtered members
       const actualResidentCount = householdMembers.length;
 
+      console.log(`Household ${household.id} details:`, {
+        name: household.houseHoldName,
+        members: householdMembers.length,
+        zone: zone?.barangayName
+      });
+
       const householdDetails: HouseholdDetails = {
         id: household.id,
         houseHoldName: household.houseHoldName,
@@ -489,7 +556,7 @@ export default function MunicipalityDashboard() {
         zoneName: household.zoneName,
         barangayId: zone?.barangayId || 0,
         barangayName: zone?.barangayName || "Unknown",
-        residentCount: actualResidentCount, // Use actual count from filtered members
+        residentCount: actualResidentCount,
         members: householdMembers
       };
 
@@ -501,13 +568,6 @@ export default function MunicipalityDashboard() {
     } finally {
       setLoadingHouseholdDetails(false);
     }
-  };
-
-  // Get accurate resident count for a household
-  const getHouseholdResidentCount = (householdId: number) => {
-    return allResidents.filter(resident => 
-      resident.householdId === householdId.toString()
-    ).length;
   };
 
   // Filter residents based on search term
@@ -544,9 +604,9 @@ export default function MunicipalityDashboard() {
   // Calculate total statistics from barangays data
   const calculateTotalStats = () => {
     const totalBarangays = barangaysStats.length || barangays.length;
-    const totalHouseholds = barangaysStats.reduce((sum, stats) => sum + stats.totalHouseholds, 0);
-    const totalResidents = barangaysStats.reduce((sum, stats) => sum + stats.totalResidents, 0);
-    const totalZones = barangaysStats.reduce((sum, stats) => sum + stats.totalZones, 0);
+    const totalHouseholds = barangaysStats.reduce((sum, stats) => sum + stats.totalHouseholds, 0) || allHouseholds.length;
+    const totalResidents = barangaysStats.reduce((sum, stats) => sum + stats.totalResidents, 0) || allResidents.length;
+    const totalZones = barangaysStats.reduce((sum, stats) => sum + stats.totalZones, 0) || allZones.length;
     
     const avgHouseholdSize = totalHouseholds > 0 ? totalResidents / totalHouseholds : 0;
 
@@ -586,9 +646,9 @@ export default function MunicipalityDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Household Details Modal - FIXED */}
+      {/* Household Details Modal - FIXED Z-INDEX */}
       {showHouseholdModal && selectedHousehold && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-gray-200">
               <div>
@@ -602,7 +662,7 @@ export default function MunicipalityDashboard() {
               </div>
               <button 
                 onClick={() => setShowHouseholdModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -631,7 +691,7 @@ export default function MunicipalityDashboard() {
                     {selectedHousehold.members.length > 0 ? (
                       <div className="space-y-4">
                         {selectedHousehold.members.map((member) => (
-                          <div key={member.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                          <div key={member.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2 mb-2">
@@ -718,9 +778,9 @@ export default function MunicipalityDashboard() {
         </div>
       )}
 
-      {/* Barangay Details Modal - FIXED */}
+      {/* Barangay Details Modal - FIXED Z-INDEX */}
       {showDetailsModal && selectedBarangay && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[90] p-4">
           <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-gray-200">
               <div>
@@ -733,7 +793,7 @@ export default function MunicipalityDashboard() {
               </div>
               <button 
                 onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -746,7 +806,7 @@ export default function MunicipalityDashboard() {
               <nav className="flex space-x-8 px-6">
                 <button
                   onClick={() => setActiveTab("residents")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                     activeTab === "residents"
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -756,7 +816,7 @@ export default function MunicipalityDashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab("households")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                     activeTab === "households"
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -787,7 +847,7 @@ export default function MunicipalityDashboard() {
                         placeholder="Search residents..."
                         value={residentSearchTerm}
                         onChange={(e) => setResidentSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                       />
                       <svg className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -804,7 +864,7 @@ export default function MunicipalityDashboard() {
                         )}
                       </div>
                       {filteredResidents.map((resident) => (
-                        <div key={resident.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                        <div key={resident.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <h5 className="font-medium text-gray-900">
@@ -857,13 +917,19 @@ export default function MunicipalityDashboard() {
                           <p>No residents found matching "{residentSearchTerm}"</p>
                           <button
                             onClick={() => setResidentSearchTerm("")}
-                            className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                            className="mt-2 text-blue-600 hover:text-blue-800 text-sm transition-colors"
                           >
                             Clear search
                           </button>
                         </div>
                       ) : (
-                        <p>No residents found for this barangay.</p>
+                        <div>
+                          <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          <p className="text-lg font-medium text-gray-900 mb-2">No residents found</p>
+                          <p className="text-gray-600">There are no residents registered in this barangay yet.</p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -880,7 +946,7 @@ export default function MunicipalityDashboard() {
                         placeholder="Search households..."
                         value={householdSearchTerm}
                         onChange={(e) => setHouseholdSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                       />
                       <svg className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -901,7 +967,7 @@ export default function MunicipalityDashboard() {
                         const actualResidentCount = getHouseholdResidentCount(household.id);
 
                         return (
-                          <div key={household.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                          <div key={household.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
                                 <h5 className="font-medium text-gray-900">
@@ -955,13 +1021,19 @@ export default function MunicipalityDashboard() {
                           <p>No households found matching "{householdSearchTerm}"</p>
                           <button
                             onClick={() => setHouseholdSearchTerm("")}
-                            className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                            className="mt-2 text-blue-600 hover:text-blue-800 text-sm transition-colors"
                           >
                             Clear search
                           </button>
                         </div>
                       ) : (
-                        <p>No households found for this barangay.</p>
+                        <div>
+                          <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <p className="text-lg font-medium text-gray-900 mb-2">No households found</p>
+                          <p className="text-gray-600">There are no households registered in this barangay yet.</p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -972,7 +1044,6 @@ export default function MunicipalityDashboard() {
         </div>
       )}
 
-      {/* Rest of the component remains the same */}
       {/* Sidebar */}
       <div className="w-80 bg-white shadow-lg border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
@@ -1091,7 +1162,7 @@ export default function MunicipalityDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadowSm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center">
                 <div className="bg-green-100 p-3 rounded-lg">
                   <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

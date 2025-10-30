@@ -24,7 +24,7 @@ namespace Atlas.BAL.Services
             {
                 Id = z.Id,
             Name = z.Name,
-            Description = z.Desciption,
+            Description = z.Description,
             BarangayId = z.BarangayId,
             BarangayName = z.Barangay?.Name
             });
