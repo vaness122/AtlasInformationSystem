@@ -15,6 +15,7 @@ namespace Atlas.Shared.DTOs
     public class MunicipalityStatisticsDto
     {
         public int MunicipalityId { get; set; }
+        public string MunicipalityName { get; set; }
         public int TotalBarangays { get; set; }
         public int TotalZones { get; set; }
         public int TotalHouseholds { get; set; }
@@ -22,6 +23,7 @@ namespace Atlas.Shared.DTOs
         public double AverageHouseholdSize { get; set; }
         public double PopulationDensity { get; set; }
         public IEnumerable<BarangayStatisticsDto> BarangayStatistics { get; set; } = new List<BarangayStatisticsDto>();
+        public int ActiveAdmins { get; set; }
     }
 
     public class HouseholdStatisticsDto

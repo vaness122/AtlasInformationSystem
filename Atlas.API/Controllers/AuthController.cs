@@ -213,7 +213,8 @@ namespace Atlas.API.Controllers
                     Roles = roles,
                     BarangayId = user.BarangayId,
                     MunicipalityId = user.MunicipalityId,
-                    ZoneId = user.ZoneId
+                    ZoneId = user.ZoneId,
+                    PhoneNumber = user.PhoneNumber
                 };
 
                 _logger.LogInformation($"Returning user info for User ID: {userId}");

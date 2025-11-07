@@ -15,7 +15,19 @@ const ResponsiveNav = () => {
   const closeNavHandler = () => setShowNav(false);
 
   // Hide nav completely on /register page
-  if (pathname === '/register' || pathname === '/login' || pathname === '/dashboard' || pathname === '/dashboard/profile'|| pathname === '/dashboard/zones'  || pathname === '/dashboard/residents' || pathname === '/dashboard/household'|| pathname === '/barangayadmin/dashboard'|| pathname === '/barangayadmin/profile'|| pathname === '/barangayadmin/zones'|| pathname === '/barangayadmin/residents'|| pathname === '/barangayadmin/household'|| pathname === '/municipalityadmin/dashboard'|| pathname === '/municipalityadmin/profile'
+  if (pathname === '/register' || pathname === '/login' 
+    || pathname === '/dashboard' 
+    || pathname === '/dashboard/profile'
+    || pathname === '/dashboard/zones'  
+    || pathname === '/dashboard/residents' 
+    || pathname === '/dashboard/household'
+    || pathname === '/barangayadmin/dashboard'
+    || pathname === '/barangayadmin/profile'
+    || pathname === '/barangayadmin/zones'
+    || pathname === '/barangayadmin/residents'
+    || pathname === '/barangayadmin/household'
+    || pathname === '/municipalityadmin/dashboard'
+    || pathname === '/municipalityadmin/profile'
     || pathname === '/municipalityadmin/barangays'
     || pathname === '/municipalityadmin/users'
     || pathname === '/superadmin/dashboard'

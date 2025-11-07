@@ -19,6 +19,10 @@ namespace Atlas.Core.Models
         public int? BarangayId { get; set; }
         public int?ZoneId { get; set; }
 
+        public DateTime? LastLoginDate { get; set; }
+        public int LoginCount { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
         public Municipality Municipality { get; set; } 
         public Barangay Barangay { get; set; }

@@ -35,6 +35,7 @@ export default function SuperAdminDashboard() {
   const { token, logout, isAuthenticated, loading, userInfo } = useAuth();
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
+
   const [stats, setStats] = useState<SuperAdminStats>({
     totalMunicipalities: 0,
     totalBarangays: 0,
@@ -56,16 +57,27 @@ export default function SuperAdminDashboard() {
     
     try {
       // Fetch municipalities
-      const municipalitiesRes = await fetch("https://localhost:44336/api/Municipalities", {
+      const municipalitiesRes = await fetch("https://localhost:44336/api/super-admin/municipalities", {
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
       });
+
+
+      //fetch households
+      const householdsRes = await fetch("https://localhost:44336/api/super-admin/households", {
+  headers: { 
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+});
+
 
       // Fetch barangays
-      const barangaysRes = await fetch("https://localhost:44336/api/Barangays", {
+      const barangaysRes = await fetch("https://localhost:44336/api/super-admin/barangays", {
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -73,12 +85,14 @@ export default function SuperAdminDashboard() {
         },
       });
 
-      if (municipalitiesRes.ok && barangaysRes.ok) {
+      if (municipalitiesRes.ok && barangaysRes.ok && householdsRes.ok) {
         const municipalitiesData = await municipalitiesRes.json();
         const barangaysData = await barangaysRes.json();
+        const householdsData = await householdsRes.json(); 
         
         console.log("Municipalities API Response:", municipalitiesData);
         console.log("Barangays API Response:", barangaysData);
+        console.log("Households API Response:" , householdsData);
         
         setMunicipalities(municipalitiesData);
         setBarangays(barangaysData);
@@ -86,9 +100,11 @@ export default function SuperAdminDashboard() {
         // Calculate stats
         const totalMunicipalities = municipalitiesData.length;
         const totalBarangays = barangaysData.length;
+        const totalHouseholds = householdsData.length;
+     
         
         // Placeholder calculations - in real app, these would come from APIs
-        const totalHouseholds = totalBarangays * 50; // Placeholder
+       // const totalHouseholds = totalBarangays * 50; // Placeholder
         const totalResidents = totalBarangays * 200; // Placeholder
         const totalAdmins = totalMunicipalities * 2; // Placeholder
 

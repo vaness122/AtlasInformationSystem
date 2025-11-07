@@ -115,8 +115,9 @@ namespace Atlas.BAL.Services
                     UserName = registerDto.UserName,
                     MunicipalityId = registerDto.MunicipalityId,
                     BarangayId = registerDto.BarangayId,
-                    ZoneId = registerDto.ZoneId
-                    
+                    ZoneId = registerDto.ZoneId,
+                    PhoneNumber = registerDto.PhoneNumber
+
                 };
 
                 //adding validation for foreign key relationships
