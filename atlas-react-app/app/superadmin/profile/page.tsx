@@ -31,19 +31,34 @@ export default function SuperAdminProfile() {
     setError(null);
     
     try {
-      // In a real app, you would fetch the profile from your API
-      // For now, we'll use the user data from auth context and mock some additional data
-      const mockProfile = {
-        id: userInfo?.userId || 1,
-        firstName: userInfo?.FirstName || "Super",
-        lastName: "Admin", // You might want to add lastName to your UserInfo interface
-        email: userInfo?.Email || "superadmin@system.gov",
-        phoneNumber: "+63 912 345 6789",
-        position: "System Administrator",
-        department: "IT Department",
-        role: "Super Admin",
-        dateCreated: "2024-01-01",
-        lastLogin: new Date().toISOString(),
+      // Fetch actual profile data from your API
+      const response = await fetch('https://localhost:44336/api/auth/me', {
+        method: 'GET',
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch profile: ${response.status}`);
+      }
+
+      const apiProfile = await response.json();
+      
+      // Transform API data to match our component structure
+      const transformedProfile = {
+        userId: apiProfile.userId,
+        firstName: apiProfile.firstName,
+        lastName: apiProfile.lastName,
+        email: apiProfile.email,
+        phoneNumber: apiProfile.phoneNumber || "+63 912 345 6789", // Fallback if null
+        position: "System Administrator", // You might want to add this to your API
+        department: "IT Department", // You might want to add this to your API
+        role: apiProfile.role,
+        roles: apiProfile.roles,
+        dateCreated: "2024-01-01", // You might want to add this to your API
+        lastLogin: new Date().toISOString(), // You might want to add this to your API
         isActive: true,
         permissions: [
           "system_management",
@@ -53,14 +68,14 @@ export default function SuperAdminProfile() {
         ]
       };
       
-      setProfile(mockProfile);
+      setProfile(transformedProfile);
       setFormData({
-        firstName: mockProfile.firstName,
-        lastName: mockProfile.lastName,
-        email: mockProfile.email,
-        phoneNumber: mockProfile.phoneNumber,
-        position: mockProfile.position,
-        department: mockProfile.department
+        firstName: transformedProfile.firstName,
+        lastName: transformedProfile.lastName,
+        email: transformedProfile.email,
+        phoneNumber: transformedProfile.phoneNumber,
+        position: transformedProfile.position,
+        department: transformedProfile.department
       });
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -136,68 +151,65 @@ export default function SuperAdminProfile() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-     {/* Sidebar */}
-<div className="w-80 bg-white shadow-lg border-r border-gray-200 flex flex-col">
-  <div className="p-6 border-b border-gray-200">
-    <Link href="/superadmin/dashboard" className="flex items-center space-x-3 text-blue-600 hover:text-blue-700 transition-colors">
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-      <span>Back to Dashboard</span>
-    </Link>
-  </div>
+      <div className="w-80 bg-white shadow-lg border-r border-gray-200 flex flex-col">
+        <div className="p-6 border-b border-gray-200">
+          <Link href="/superadmin/dashboard" className="flex items-center space-x-3 text-blue-600 hover:text-blue-700 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Back to Dashboard</span>
+          </Link>
+        </div>
 
-  <nav className="flex-1 p-4">
-    <ul className="space-y-2">
-      {/* ONLY THESE 4 NAVIGATION ITEMS */}
-      <li>
-        <Link href="/superadmin/dashboard" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          <span>Dashboard</span>
-        </Link>
-      </li>
-      <li>
-        <a href="#" className="flex items-center space-x-3 px-4 py-3 text-gray-700 bg-blue-50 rounded-lg border border-blue-100">
-          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span className="font-medium">Profile</span>
-        </a>
-      </li>
-      <li>
-        <Link href="/superadmin/users" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-          </svg>
-          <span>Admin Users</span>
-        </Link>
-      </li>
-      <li>
-        <Link href="/superadmin/metrics" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <span>Metrics & Analytics</span>
-        </Link>
-      </li>
-      {/* END OF 4 NAVIGATION ITEMS */}
-    </ul>
-  </nav>
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            <li>
+              <Link href="/superadmin/dashboard" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span>Dashboard</span>
+              </Link>
+            </li>
+            <li>
+              <a href="#" className="flex items-center space-x-3 px-4 py-3 text-gray-700 bg-blue-50 rounded-lg border border-blue-100">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="font-medium">Profile</span>
+              </a>
+            </li>
+            <li>
+              <Link href="/superadmin/users" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+                <span>Admin Users</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/superadmin/metrics" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Metrics & Analytics</span>
+              </Link>
+            </li>
+          </ul>
+        </nav>
 
-  <div className="p-4 border-t border-gray-200">
-    <button 
-      onClick={logout} 
-      className="w-full flex items-center justify-center space-x-2 bg-red-50 hover:bg-red-100 text-red-700 px-4 py-3 rounded-lg border border-red-200 transition-colors group"
-    >
-      <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-      </svg>
-      <span className="font-medium">Logout</span>
-    </button>
-  </div>
-</div>
+        <div className="p-4 border-t border-gray-200">
+          <button 
+            onClick={logout} 
+            className="w-full flex items-center justify-center space-x-2 bg-red-50 hover:bg-red-100 text-red-700 px-4 py-3 rounded-lg border border-red-200 transition-colors group"
+          >
+            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="font-medium">Logout</span>
+          </button>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
@@ -410,7 +422,7 @@ export default function SuperAdminProfile() {
                 </div>
               </div>
 
-              {/* Account Overview */}
+              {/* Account Overview - Removed Quick Actions and Security Status */}
               <div className="space-y-6">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Overview</h3>
@@ -445,46 +457,6 @@ export default function SuperAdminProfile() {
                         {new Date(profile.lastLogin).toLocaleDateString()} at{" "}
                         {new Date(profile.lastLogin).toLocaleTimeString()}
                       </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
-                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
-                      Change Password
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
-                      Two-Factor Authentication
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
-                      Notification Settings
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors">
-                      Deactivate Account
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Status</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Password Strength</span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Strong
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">2FA Status</span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        Not Enabled
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Last Security Review</span>
-                      <span className="text-sm text-gray-900">30 days ago</span>
                     </div>
                   </div>
                 </div>

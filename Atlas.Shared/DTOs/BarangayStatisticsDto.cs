@@ -18,6 +18,4 @@ namespace Atlas.Shared.DTOs
         public int HouseholdHeads { get; set; }
         public List<ZoneStatisticDto> ZoneStatistics { get; set; } = new();
     }
-
-   
 }

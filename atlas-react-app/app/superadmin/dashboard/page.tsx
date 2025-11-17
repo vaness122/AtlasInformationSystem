@@ -23,25 +23,55 @@ interface Barangay {
   municipalityName: string;
 }
 
+interface SystemOverview {
+  systemStatistics: {
+    totalMunicipalities: number;
+    totalBarangays: number;
+    totalZones: number;
+    totalHouseholds: number;
+    totalResidents: number;
+    totalAdmins: number;
+    activeAdmins: number;
+    inactiveAdmins: number;
+    adminsByRole: {
+      [key: string]: number;
+    };
+    averageHouseholdSize: number;
+  };
+  municipalityStatistics: any[];
+  activeAdmins: number;
+  inactiveAdmins: number;
+  lastUpdated: string;
+}
+
 interface SuperAdminStats {
   totalMunicipalities: number;
   totalBarangays: number;
   totalHouseholds: number;
   totalResidents: number;
   totalAdmins: number;
+  activeAdmins: number;
+  inactiveAdmins: number;
+  totalZones: number;
+  averageHouseholdSize: number;
 }
 
 export default function SuperAdminDashboard() {
   const { token, logout, isAuthenticated, loading, userInfo } = useAuth();
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
+  const [systemOverview, setSystemOverview] = useState<SystemOverview | null>(null);
 
   const [stats, setStats] = useState<SuperAdminStats>({
     totalMunicipalities: 0,
     totalBarangays: 0,
     totalHouseholds: 0,
     totalResidents: 0,
-    totalAdmins: 0
+    totalAdmins: 0,
+    activeAdmins: 0,
+    inactiveAdmins: 0,
+    totalZones: 0,
+    averageHouseholdSize: 0
   });
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +86,15 @@ export default function SuperAdminDashboard() {
     setError(null);
     
     try {
+      // Fetch system overview data (includes all stats)
+      const overviewRes = await fetch("https://localhost:44336/api/super-admin/overview", {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+      });
+
       // Fetch municipalities
       const municipalitiesRes = await fetch("https://localhost:44336/api/super-admin/municipalities", {
         headers: { 
@@ -64,17 +103,6 @@ export default function SuperAdminDashboard() {
           "Accept": "application/json"
         },
       });
-
-
-      //fetch households
-      const householdsRes = await fetch("https://localhost:44336/api/super-admin/households", {
-  headers: { 
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-    "Accept": "application/json"
-  },
-});
-
 
       // Fetch barangays
       const barangaysRes = await fetch("https://localhost:44336/api/super-admin/barangays", {
@@ -85,100 +113,105 @@ export default function SuperAdminDashboard() {
         },
       });
 
-      if (municipalitiesRes.ok && barangaysRes.ok && householdsRes.ok) {
+      if (overviewRes.ok && municipalitiesRes.ok && barangaysRes.ok) {
+        const overviewData = await overviewRes.json();
         const municipalitiesData = await municipalitiesRes.json();
         const barangaysData = await barangaysRes.json();
-        const householdsData = await householdsRes.json(); 
         
+        console.log("System Overview API Response:", overviewData);
         console.log("Municipalities API Response:", municipalitiesData);
         console.log("Barangays API Response:", barangaysData);
-        console.log("Households API Response:" , householdsData);
         
+        setSystemOverview(overviewData);
         setMunicipalities(municipalitiesData);
         setBarangays(barangaysData);
         
-        // Calculate stats
-        const totalMunicipalities = municipalitiesData.length;
-        const totalBarangays = barangaysData.length;
-        const totalHouseholds = householdsData.length;
-     
+        // Use real data from system overview
+        const systemStats = overviewData.systemStatistics;
         
-        // Placeholder calculations - in real app, these would come from APIs
-       // const totalHouseholds = totalBarangays * 50; // Placeholder
-        const totalResidents = totalBarangays * 200; // Placeholder
-        const totalAdmins = totalMunicipalities * 2; // Placeholder
-
         setStats({
-          totalMunicipalities,
-          totalBarangays,
-          totalHouseholds,
-          totalResidents,
-          totalAdmins
+          totalMunicipalities: systemStats.totalMunicipalities,
+          totalBarangays: systemStats.totalBarangays,
+          totalHouseholds: systemStats.totalHouseholds,
+          totalResidents: systemStats.totalResidents,
+          totalAdmins: systemStats.totalAdmins,
+          activeAdmins: systemStats.activeAdmins,
+          inactiveAdmins: systemStats.inactiveAdmins,
+          totalZones: systemStats.totalZones,
+          averageHouseholdSize: systemStats.averageHouseholdSize
         });
       } else {
         console.error("Failed to fetch data");
         setError("Failed to load dashboard data");
         // Use sample data for demonstration
-        setMunicipalities([
-          { 
-            id: 1, 
-            name: "Ajuy", 
-            code: "AJY", 
-            province: "Iloilo", 
-            region: "Western Visayas",
-            totalBarangays: 1,
-            totalHouseholds: 50,
-            totalResidents: 200
-          }
-        ]);
-        setBarangays([
-          { 
-            id: 1, 
-            name: "Adcadarao", 
-            code: "ADC", 
-            municipalityId: 1, 
-            municipalityName: "Ajuy" 
-          }
-        ]);
+        setSystemOverview({
+          systemStatistics: {
+            totalMunicipalities: 1,
+            totalBarangays: 3,
+            totalZones: 4,
+            totalHouseholds: 2,
+            totalResidents: 8,
+            totalAdmins: 6,
+            activeAdmins: 6,
+            inactiveAdmins: 0,
+            adminsByRole: {
+              "MunicipalityAdmin": 4,
+              "BarangayAdmin": 2
+            },
+            averageHouseholdSize: 4
+          },
+          municipalityStatistics: [],
+          activeAdmins: 4,
+          inactiveAdmins: 2,
+          lastUpdated: new Date().toISOString()
+        });
         setStats({
           totalMunicipalities: 1,
-          totalBarangays: 1,
-          totalHouseholds: 50,
-          totalResidents: 200,
-          totalAdmins: 2
+          totalBarangays: 3,
+          totalHouseholds: 2,
+          totalResidents: 8,
+          totalAdmins: 6,
+          activeAdmins: 6,
+          inactiveAdmins: 0,
+          totalZones: 4,
+          averageHouseholdSize: 4
         });
       }
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to load dashboard data");
       // Use sample data for demonstration
-      setMunicipalities([
-        { 
-          id: 1, 
-          name: "Ajuy", 
-          code: "AJY", 
-          province: "Iloilo", 
-          region: "Western Visayas",
-          totalBarangays: 1,
-          totalHouseholds: 50,
-          totalResidents: 200
-        }
-      ]);
-      setBarangays([
-        { 
-          id: 1, 
-          name: "Adcadarao", 
-          code: "ADC", 
-          municipalityId: 1, 
-          municipalityName: "Ajuy" 
-        }
-      ]);
+      setSystemOverview({
+        systemStatistics: {
+          totalMunicipalities: 1,
+          totalBarangays: 3,
+          totalZones: 4,
+          totalHouseholds: 2,
+          totalResidents: 8,
+          totalAdmins: 6,
+          activeAdmins: 6,
+          inactiveAdmins: 0,
+          adminsByRole: {
+            "MunicipalityAdmin": 4,
+            "BarangayAdmin": 2
+          },
+          averageHouseholdSize: 4
+        },
+        municipalityStatistics: [],
+        activeAdmins: 4,
+        inactiveAdmins: 2,
+        lastUpdated: new Date().toISOString()
+      });
       setStats({
         totalMunicipalities: 1,
-        totalBarangays: 1,
-        totalHouseholds: 50,
-        totalResidents: 200,
-        totalAdmins: 2
+        totalBarangays: 3,
+        totalHouseholds: 2,
+        totalResidents: 8,
+        totalAdmins: 6,
+        activeAdmins: 6,
+        inactiveAdmins: 0,
+        totalZones: 4,
+        averageHouseholdSize: 4
       });
     } finally {
       setLoadingData(false);
@@ -288,6 +321,11 @@ export default function SuperAdminDashboard() {
             <p className="text-gray-600 mt-2">
               Welcome back, {userInfo?.FirstName || "Super Admin"}! Here's an overview of the entire system.
             </p>
+            {systemOverview && (
+              <p className="text-sm text-gray-500 mt-1">
+                Last updated: {new Date(systemOverview.lastUpdated).toLocaleString()}
+              </p>
+            )}
           </div>
 
           {/* Error Message */}
@@ -362,6 +400,55 @@ export default function SuperAdminDashboard() {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Admin Users</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalAdmins}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {stats.activeAdmins} active • {stats.inactiveAdmins} inactive
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Stats Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="bg-indigo-100 p-3 rounded-lg">
+                  <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Zones</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalZones}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="bg-pink-100 p-3 rounded-lg">
+                  <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Residents</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalResidents.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="bg-teal-100 p-3 rounded-lg">
+                  <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Avg. Household Size</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.averageHouseholdSize}</p>
                 </div>
               </div>
             </div>
@@ -421,8 +508,10 @@ export default function SuperAdminDashboard() {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-blue-800">Last Backup</p>
-                    <p className="text-xs text-blue-600">Today, 02:00 AM</p>
+                    <p className="text-sm font-medium text-blue-800">Last Sync</p>
+                    <p className="text-xs text-blue-600">
+                      {systemOverview ? new Date(systemOverview.lastUpdated).toLocaleTimeString() : 'Loading...'}
+                    </p>
                   </div>
                 </div>
               </div>
