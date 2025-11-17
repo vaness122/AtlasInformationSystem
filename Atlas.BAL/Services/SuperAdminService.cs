@@ -1,4 +1,5 @@
-﻿using Atlas.Core.Models;
+﻿using Atlas.BAL.Interfaces;
+using Atlas.Core.Models;
 using Atlas.Core.Models.Residents;
 using Atlas.DAL.Repositories;
 using Atlas.Shared.DTOs;
@@ -16,13 +17,13 @@ namespace Atlas.BAL.Services
 {
     public class SuperAdminService : ISuperAdmin
     {
-        private readonly ISuperAdminRepository _superAdminRepository;
+        private readonly Interfaces.ISuperAdminRepository _superAdminRepository;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
         private readonly ILogger<SuperAdminService> _logger;
 
         public SuperAdminService(
-            ISuperAdminRepository superAdminRepository,
+            Interfaces.ISuperAdminRepository superAdminRepository,
             UserManager<AppUser> userManager,
             IMapper mapper,
             ILogger<SuperAdminService> logger
@@ -348,23 +349,45 @@ namespace Atlas.BAL.Services
         {
             try
             {
-                var statistics = await _superAdminRepository.GetSystemStatisticsAsync();
-                var municipalityStats = await _superAdminRepository.GetMunicipalityStatisticsAsync();
-                var admins = await GetAllAdminsAsync();
+                _logger.LogInformation("Getting system overview");
+
+                // Get all data in parallel for better performance
+                var systemStatsTask = _superAdminRepository.GetSystemStatisticsAsync();
+                var municipalityStatsTask = _superAdminRepository.GetMunicipalityStatisticsAsync();
+                var adminsTask = GetAllAdminsAsync();
+
+                await Task.WhenAll(systemStatsTask, municipalityStatsTask, adminsTask);
+
+                var systemStats = await systemStatsTask;
+                var municipalityStats = await municipalityStatsTask;
+                var admins = await adminsTask;
+
+                // Calculate admin counts properly - use IsActive property from UserDto
+                var activeAdmins = admins.Count(a => a.IsActive);
+                var inactiveAdmins = admins.Count(a => !a.IsActive);
 
                 return new SystemOverviewDto
                 {
-                    SystemStatistics = _mapper.Map<SystemStatisticsDto>(statistics),
-                    MunicipalityStatistics = _mapper.Map<IEnumerable<MunicipalityStatisticsDto>>(municipalityStats),
-                    ActiveAdmins = admins.Count(a => IsAdminActive(a)),
-                    InactiveAdmins = admins.Count(a => !IsAdminActive(a)),
+                    SystemStatistics = systemStats, // Already mapped by repository
+                    MunicipalityStatistics = municipalityStats, // Already mapped by repository
+                    ActiveAdmins = activeAdmins,
+                    InactiveAdmins = inactiveAdmins,
                     LastUpdated = DateTime.UtcNow
                 };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting system overview");
-                throw;
+
+                // Return safe defaults instead of throwing
+                return new SystemOverviewDto
+                {
+                    SystemStatistics = new SystemStatisticsDto(),
+                    MunicipalityStatistics = new List<MunicipalityStatisticsDto>(),
+                    ActiveAdmins = 0,
+                    InactiveAdmins = 0,
+                    LastUpdated = DateTime.UtcNow
+                };
             }
         }
 

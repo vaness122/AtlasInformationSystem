@@ -3,6 +3,7 @@ using Atlas.BAL.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
+using Atlas.BAL.Interfaces;
 
 namespace Atlas.API.Controllers
 {
@@ -28,7 +29,12 @@ namespace Atlas.API.Controllers
         {
             try
             {
+                _logger.LogInformation("GetSystemOverview endpoint called");
+
+                // This should call the actual service, NOT return hardcoded data
                 var overview = await _superAdminService.GetSystemOverviewAsync();
+
+                _logger.LogInformation("Successfully retrieved system overview");
                 return Ok(overview);
             }
             catch (Exception ex)

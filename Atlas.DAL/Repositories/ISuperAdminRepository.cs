@@ -1,26 +1,21 @@
-﻿using Atlas.BAL.Services;
+﻿
 using Atlas.Core.Models;
 using Atlas.Core.Models.Residents;
 using Atlas.Shared.DTOs;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace Atlas.DAL.Repositories
+namespace Atlas.BAL.Interfaces // Changed from Atlas.DAL.Repositories
 {
-   public interface ISuperAdminRepository
+    public interface ISuperAdminRepository
     {
-        Task<SystemStatisticsDto> GetSystemStatisticsAsync();
         Task<SystemOverviewDto> GetSystemOverviewAsync();
-
+        Task<SystemStatisticsDto> GetSystemStatisticsAsync();
         Task<IEnumerable<MunicipalityStatisticsDto>> GetMunicipalityStatisticsAsync();
 
-        Task<IEnumerable<AppUser>> GetAllAdminsAsync();
+        Task<IEnumerable<UserDto>> GetAllAdminsAsync();
         Task<bool> DeactivateAdminAsync(string id);
         Task<bool> ReactivateAdminAsync(string id);
-
 
         Task<IEnumerable<Municipality>> GetAllMunicipalitiesAsync();
         Task<Municipality> GetMunicipalityByIdAsync(int id);

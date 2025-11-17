@@ -1,4 +1,5 @@
 ﻿using Atlas.API.Swagger;
+using Atlas.BAL.Interfaces;
 using Atlas.BAL.Mapping;
 using Atlas.BAL.Services;
 using Atlas.Core.Enum;
@@ -13,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Reflection.Metadata;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,7 +80,7 @@ builder.Services.AddTransient<IHouseholdRepository, HouseholdRepository>();
 builder.Services.AddTransient<IBarangayRepository, BarangayRepository>();
 builder.Services.AddTransient<IMunicipalityRepository, MunicipalityRepository>();
 builder.Services.AddTransient<IZoneRepository, ZoneRepository>();
-builder.Services.AddTransient<ISuperAdminRepository, SuperAdminRepository>();
+builder.Services.AddTransient<Atlas.BAL.Interfaces.ISuperAdminRepository, SuperAdminRepository>();
 
 // Register application services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -87,7 +89,7 @@ builder.Services.AddScoped<IBarangayService ,  BarangayService>();
 builder.Services.AddScoped<IZoneService , ZoneService>();
 builder.Services.AddScoped<IBarangayAdminService , BarangayAdminService>();
 builder.Services.AddScoped<IMunicipalityAdminService , MunicipalityAdminService>();
-builder.Services.AddScoped<ISuperAdmin ,  SuperAdminService>();
+builder.Services.AddScoped<ISuperAdmin, SuperAdminService>();
 
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(sp =>
 {
